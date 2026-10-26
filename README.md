@@ -176,3 +176,4 @@ In two separate terminal windows:
 ## 6. Publications & Deliverables Aligned
 - **Journal/Conference Paper**: Manuscript draft based on EPP-BCFL lightweight adaptation and tabular clinical benchmarking.
 - **Web Application**: Fully functional role-based healthcare portal with Ganache smart contracts and Flower federated aggregation.
+
