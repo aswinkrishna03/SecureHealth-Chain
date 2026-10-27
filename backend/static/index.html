@@ -17,6 +17,17 @@
 </head>
 <body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col antialiased selection:bg-cyan-500 selection:text-white">
 
+    <div id="login-overlay" class="fixed inset-0 z-[100] bg-slate-950/95 flex items-center justify-center p-4">
+        <form onsubmit="signIn(event)" class="w-full max-w-md bg-slate-900 border border-slate-800 rounded-2xl p-8 space-y-5 shadow-xl">
+            <div><p class="text-cyan-400 font-bold">SecureHealth Chain</p><h1 class="text-2xl font-bold mt-2">Sign in</h1><p class="text-sm text-slate-400 mt-1">Sign in with an authorized project account to use the dashboard.</p></div>
+            <label class="block text-sm text-slate-300">Email<input id="login-email" type="email" required autocomplete="username" class="mt-1 w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-white" /></label>
+            <label class="block text-sm text-slate-300">Password<input id="login-password" type="password" required autocomplete="current-password" class="mt-1 w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-white" /></label>
+            <p id="login-error" role="alert" class="hidden text-sm text-rose-400"></p>
+            <button id="login-submit" class="w-full bg-cyan-600 hover:bg-cyan-500 rounded-lg py-2.5 font-semibold">Sign in</button>
+            <p class="text-xs text-slate-500">Demo admin: admin@securehealth.org / admin</p>
+        </form>
+    </div>
+
     <!-- Top Navigation Bar -->
     <header class="border-b border-slate-800 bg-slate-900/80 backdrop-blur sticky top-0 z-50">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
@@ -270,19 +281,19 @@
             <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
                 <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl shadow">
                     <span class="text-xs text-slate-400 block">FL Rounds Completed</span>
-                    <span id="fl-rounds-count" class="text-2xl font-black text-cyan-400">3</span>
+                    <span id="fl-rounds-count" class="text-2xl font-black text-cyan-400">0</span>
                 </div>
                 <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl shadow">
                     <span class="text-xs text-slate-400 block">Global Model Accuracy</span>
-                    <span id="fl-accuracy" class="text-2xl font-black text-emerald-400">94.2%</span>
+                    <span id="fl-accuracy" class="text-2xl font-black text-emerald-400">—</span>
                 </div>
                 <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl shadow">
                     <span class="text-xs text-slate-400 block">Participating Silos</span>
                     <span class="text-2xl font-black text-purple-400">3 Nodes</span>
                 </div>
                 <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl shadow">
-                    <span class="text-xs text-slate-400 block">Privacy Guarantee</span>
-                    <span class="text-xs font-mono text-amber-400 block mt-2">DP (&epsilon;=1.0) + SHA256</span>
+                    <span class="text-xs text-slate-400 block">Privacy Noise</span>
+                    <span class="text-xs font-mono text-amber-400 block mt-2">Gaussian demo; no formal DP guarantee</span>
                 </div>
             </div>
 
@@ -290,8 +301,8 @@
             <div class="bg-slate-900 border border-slate-800 rounded-xl p-6 shadow-xl space-y-4">
                 <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div>
-                        <h3 class="text-lg font-bold text-white">Execute Decentralized Federated Learning Round</h3>
-                        <p class="text-xs text-slate-400">Triggers local training at Hospital-A (Apollo), Hospital-B (Aster), and Hospital-C (City General), injects Gaussian noise, and aggregates with FedAvg.</p>
+                        <h3 class="text-lg font-bold text-white">Run Local Federated Learning Simulation</h3>
+                        <p class="text-xs text-slate-400">Uses the Synthea synthetic EHR ZIP from Downloads when present, splitting patients into three virtual edge nodes. Per-patient DP-SGD clips and noises gradients; CKKS encrypts updates for sample-weighted FedAvg. The private key and key custodian remain in this local demo process, and exact metrics are not DP.</p>
                     </div>
                     <button onclick="triggerFLRound()" id="btn-trigger-fl" class="px-5 py-2.5 bg-gradient-to-r from-purple-600 to-cyan-600 hover:from-purple-500 hover:to-cyan-500 text-white font-bold rounded-lg text-sm transition flex items-center gap-2">
                         <span>🚀 Start FL Training Round</span>
@@ -299,10 +310,7 @@
                 </div>
 
                 <div class="bg-slate-950 rounded-lg p-4 border border-slate-800 text-xs font-mono space-y-2 text-slate-300 max-h-56 overflow-y-auto" id="fl-log-terminal">
-                    <div class="text-cyan-400 font-bold">[*] Flower FL Coordinator Engine Ready.</div>
-                    <div class="text-slate-400">[Round 1] Hospital-A, B, C submitted DP-perturbed weights. Aggregated Accuracy: 88.4%</div>
-                    <div class="text-slate-400">[Round 2] Update Hash committed to Ganache. Aggregated Accuracy: 91.2%</div>
-                    <div class="text-emerald-400">[Round 3] FedAvg Global Model Converged. Accuracy: 94.2%</div>
+                    <div class="text-cyan-400 font-bold">[*] Sign in as Admin, then start a training round.</div>
                 </div>
             </div>
         </section>
@@ -412,6 +420,68 @@
     <!-- Script Application Logic -->
     <script>
         const API_BASE = "";
+        let sessionToken = sessionStorage.getItem('securehealth_token') || '';
+
+        async function apiFetch(url, options = {}) {
+            const headers = new Headers(options.headers || {});
+            if (sessionToken) headers.set('Authorization', `Bearer ${sessionToken}`);
+            return window.fetch(url, { ...options, headers });
+        }
+
+        async function signIn(event) {
+            event.preventDefault();
+            const button = document.getElementById('login-submit');
+            const errorBox = document.getElementById('login-error');
+            button.disabled = true;
+            button.textContent = 'Signing in…';
+            errorBox.classList.add('hidden');
+            try {
+                const response = await window.fetch(`${API_BASE}/api/auth/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        email: document.getElementById('login-email').value,
+                        password: document.getElementById('login-password').value
+                    })
+                });
+                const data = await response.json();
+                if (!response.ok || !data.success) throw new Error(data.message || 'Sign in failed');
+                sessionToken = data.token;
+                sessionStorage.setItem('securehealth_token', sessionToken);
+                document.getElementById('login-overlay').classList.add('hidden');
+                fetchRecords();
+                fetchBlocks();
+            } catch (error) {
+                errorBox.textContent = error.message;
+                errorBox.classList.remove('hidden');
+            } finally {
+                button.disabled = false;
+                button.textContent = 'Sign in';
+            }
+        }
+
+        async function restoreSession() {
+            if (!sessionToken) return;
+            try {
+                const response = await apiFetch(`${API_BASE}/api/auth/me`);
+                if (!response.ok) throw new Error('Session expired');
+                document.getElementById('login-overlay').classList.add('hidden');
+                fetchRecords();
+                fetchBlocks();
+            } catch {
+                sessionToken = '';
+                sessionStorage.removeItem('securehealth_token');
+            }
+        }
+
+        function appendFLLog(message, className = 'text-slate-400') {
+            const row = document.createElement('div');
+            row.className = className;
+            row.textContent = message;
+            const terminal = document.getElementById('fl-log-terminal');
+            terminal.appendChild(row);
+            terminal.scrollTop = terminal.scrollHeight;
+        }
 
         // Tab Switching
         function showTab(tabId) {
@@ -454,7 +524,7 @@
         // Fetch and display EHR records
         async function fetchRecords() {
             try {
-                const res = await fetch(`${API_BASE}/api/ehr/list`);
+                const res = await apiFetch(`${API_BASE}/api/ehr/list`);
                 const data = await res.json();
                 const tbody = document.getElementById('records-table-body');
                 tbody.innerHTML = "";
@@ -499,7 +569,7 @@
             const angina = document.getElementById('pred-angina').value;
 
             try {
-                const res = await fetch(`${API_BASE}/api/ai/predict-risk`, {
+                const res = await apiFetch(`${API_BASE}/api/ai/predict-risk`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ age, resting_bp: bp, cholesterol: chol, max_hr: hr, fbs, angina })
@@ -539,7 +609,7 @@
             document.getElementById('verify-uuid').value = uuid;
 
             try {
-                const res = await fetch(`${API_BASE}/api/verify/record`, {
+                const res = await apiFetch(`${API_BASE}/api/verify/record`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ record_uuid: uuid })
@@ -581,7 +651,7 @@
         async function triggerTamperSimulation() {
             const uuid = document.getElementById('verify-uuid').value;
             try {
-                const res = await fetch(`${API_BASE}/api/demo/tamper-record`, {
+                const res = await apiFetch(`${API_BASE}/api/demo/tamper-record`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ record_uuid: uuid })
@@ -600,28 +670,38 @@
         async function triggerFLRound() {
             const btn = document.getElementById('btn-trigger-fl');
             btn.disabled = true;
-            btn.innerText = "⏳ Running FL Training Across Nodes...";
+            btn.innerText = "⏳ Training Across Edge Nodes...";
             
-            const logTerm = document.getElementById('fl-log-terminal');
-            logTerm.innerHTML += `<div class="text-amber-400 font-bold mt-2">[*] Initializing Round with 3 Hospital Edge Silos (Apollo, Aster, City General)...</div>`;
+            appendFLLog('[*] Starting local training from the configured EHR dataset...', 'text-amber-400 font-bold mt-2');
 
             try {
-                const res = await fetch(`${API_BASE}/api/fl/trigger-round`, {
+                const res = await apiFetch(`${API_BASE}/api/fl/trigger-round`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ rounds: 1, epsilon: 1.0 })
                 });
-                const data = await res.json();
-                
-                logTerm.innerHTML += `<div class="text-cyan-400">   -> Applied Gaussian DP (xi ~ N(0, sigma^2)) to weights</div>`;
-                logTerm.innerHTML += `<div class="text-emerald-400 font-bold">   -> Round Aggregated Successfully! New Global Accuracy: ${data.results.final_accuracy || 95.2}%</div>`;
-                logTerm.innerHTML += `<div class="text-slate-400 break-all">   -> Ganache Tx Hash: ${data.results.latest_tx_hash || '0x410f4d37...'}</div>`;
-                logTerm.scrollTop = logTerm.scrollHeight;
-
-                document.getElementById('fl-rounds-count').innerText = parseInt(document.getElementById('fl-rounds-count').innerText) + 1;
-                document.getElementById('fl-accuracy').innerText = `${data.results.final_accuracy || 95.2}%`;
+                let data;
+                try { data = await res.json(); }
+                catch { throw new Error(`Server returned an unreadable response (HTTP ${res.status})`); }
+                if (!res.ok || !data.success || !data.results) {
+                    throw new Error(data.message || `Training request failed (HTTP ${res.status})`);
+                }
+                const result = data.results;
+                const lastRound = result.history?.[result.history.length - 1];
+                appendFLLog(`   -> Dataset: ${result.dataset || 'configured sample dataset'}`, 'text-cyan-400');
+                appendFLLog(`   -> Patients: ${result.dataset_summary?.patient_count ?? 'n/a'}; edge nodes: ${result.dataset_summary?.edge_node_count ?? 'n/a'}`, 'text-cyan-400');
+                appendFLLog(`   -> Target: ${result.dataset_summary?.target ?? 'see dataset documentation'}`, 'text-cyan-400');
+                appendFLLog(`   -> Rejected ${result.rejected_edge_rows ?? 0} invalid row(s) during preprocessing`, 'text-slate-400');
+                appendFLLog(`   -> Differential privacy: ${result.privacy_note}`, 'text-slate-400');
+                appendFLLog(`   -> Homomorphic encryption: ${result.homomorphic_encryption_note}`, 'text-slate-400');
+                appendFLLog('   -> Applied paper FedAvg on encrypted CKKS vectors, weighted by each node training sample count', 'text-slate-400');
+                appendFLLog(`   -> Round complete. Held-out accuracy: ${result.final_accuracy}%`, 'text-emerald-400 font-bold');
+                appendFLLog(`   -> Local simulation hash: ${result.latest_tx_hash || 'not available'}`, 'text-slate-400 break-all');
+                (lastRound?.node_updates || []).forEach((node) => appendFLLog(`   -> ${node.hospital}: ${node.samples} training rows; holdout ${node.local_accuracy}%`, 'text-slate-400'));
+                document.getElementById('fl-rounds-count').innerText = String(Number(document.getElementById('fl-rounds-count').innerText) + 1);
+                document.getElementById('fl-accuracy').innerText = `${result.final_accuracy}%`;
             } catch (err) {
-                logTerm.innerHTML += `<div class="text-rose-400">FL Execution failed: ${err}</div>`;
+                appendFLLog(`FL execution failed: ${err.message || err}`, 'text-rose-400');
             } finally {
                 btn.disabled = false;
                 btn.innerText = "🚀 Start FL Training Round";
@@ -640,7 +720,7 @@
             const chol = document.getElementById('modal-chol').value;
 
             try {
-                const res = await fetch(`${API_BASE}/api/ehr/create`, {
+                const res = await apiFetch(`${API_BASE}/api/ehr/create`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -672,7 +752,7 @@
         // Fetch and render Blockchain Blocks
         async function fetchBlocks() {
             try {
-                const res = await fetch(`${API_BASE}/api/blockchain/blocks`);
+                const res = await apiFetch(`${API_BASE}/api/blockchain/blocks`);
                 const data = await res.json();
                 document.getElementById('bc-total-blocks').innerText = data.total_blocks;
                 document.getElementById('bc-contract-addr').innerText = data.contract_address;
@@ -727,8 +807,7 @@
 
         // Initialize on load
         window.onload = function() {
-            fetchRecords();
-            fetchBlocks();
+            restoreSession();
         };
     </script>
 </body>

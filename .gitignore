@@ -43,3 +43,4 @@ $RECYCLE.BIN/
 
 # Logs
 *.log
+fl_core/global_disease_model.json

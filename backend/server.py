@@ -7,10 +7,16 @@ Provides complete API endpoints and serves the interactive Web Dashboard.
 import http.server
 import socketserver
 import json
+import csv
+import io
 import os
 import uuid
 import datetime
 import urllib.parse
+import hashlib
+import hmac
+import secrets
+import time
 from typing import Dict, Any
 
 from services.crypto_service import calculate_ehr_hash
@@ -21,21 +27,38 @@ from services.blockchain_ledger import blockchain_ledger
 import sys
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "fl_core")))
 try:
-    from simulate_fl import run_federated_training
+    from simulation import run_federated_training
+    from risk_model import predict_risk
     HAS_FL_ENGINE = True
+    HAS_RISK_MODEL = True
 except Exception as e:
     HAS_FL_ENGINE = False
+    HAS_RISK_MODEL = False
+    predict_risk = None
     print(f"[Warning] FL simulation engine not loaded: {e}")
 
 PORT = 5000
 
-# In-Memory Database initialized with realistic demo data
+# Demo users are hashed at startup; newly registered accounts use the same format.
+def hash_password(password: str, salt: bytes = None) -> str:
+    salt = salt or secrets.token_bytes(16)
+    digest = hashlib.pbkdf2_hmac("sha256", password.encode("utf-8"), salt, 310000)
+    return f"{salt.hex()}${digest.hex()}"
+
+def verify_password(password: str, stored: str) -> bool:
+    try:
+        salt_hex, digest_hex = stored.split("$", 1)
+        candidate = hash_password(password, bytes.fromhex(salt_hex)).split("$", 1)[1]
+        return hmac.compare_digest(candidate, digest_hex)
+    except (ValueError, TypeError):
+        return False
+
 USERS_DB = {
     "admin@securehealth.org": {
         "id": 1,
         "name": "System Administrator",
         "email": "admin@securehealth.org",
-        "password": "admin",
+        "password_hash": hash_password("admin"),
         "role": "admin",
         "hospital_name": "Health Network HQ"
     },
@@ -43,7 +66,7 @@ USERS_DB = {
         "id": 2,
         "name": "Dr. Sarah Jenkins",
         "email": "doctor@securehealth.org",
-        "password": "doctor",
+        "password_hash": hash_password("doctor"),
         "role": "doctor",
         "hospital_name": "Metro Health General Hospital"
     },
@@ -51,11 +74,12 @@ USERS_DB = {
         "id": 3,
         "name": "Aswin Krishna",
         "email": "patient@securehealth.org",
-        "password": "patient",
+        "password_hash": hash_password("patient"),
         "role": "patient",
         "hospital_name": "Metro Health General Hospital"
     }
 }
+SESSIONS = {}
 
 EHR_RECORDS_DB = {
     "EHR-DEMO-001": {
@@ -80,28 +104,27 @@ EHR_RECORDS_DB = {
         "created_at": "2026-10-26T20:15:00Z"
     }
 }
+IOMT_READINGS_DB = []
 
-# Ensure demo QR code exists
-generate_ehr_qr_code(EHR_RECORDS_DB["EHR-DEMO-001"])
+# Create a demo seal whose database record and ledger hash match each other.
+demo_record = EHR_RECORDS_DB["EHR-DEMO-001"]
+demo_record["record_hash"] = calculate_ehr_hash(
+    demo_record["patient_id"], demo_record["hospital_name"], demo_record["diagnosis"], demo_record["clinical_metrics"]
+)
+demo_chain_receipt = blockchain_ledger.register_ehr_record("EHR-DEMO-001", demo_record["record_hash"])
+demo_record["blockchain_tx_hash"] = demo_chain_receipt["tx_hash"]
+demo_record["qr_code_url"] = generate_ehr_qr_code(demo_record)
 
-# Seed Blockchain Smart Contract ledger
-blockchain_ledger.register_ehr_record("EHR-DEMO-001", EHR_RECORDS_DB["EHR-DEMO-001"]["record_hash"])
-blockchain_ledger.publish_global_fl_model(1, "0xb717ae93d4533c06789123456789abcdef0123456789abcdef0123456789abcd")
-blockchain_ledger.publish_global_fl_model(2, "0x3ffe6471dc677a3d890123456789abcdef0123456789abcdef0123456789abcd")
-blockchain_ledger.publish_global_fl_model(3, "0xe2473f35eaa3ccd83b772cce7444a04c7e269b8fe1a35309acc2e06d72927144")
+# No fake training rounds are preloaded; metrics appear after a simulation.
 
 FL_STATE = {
-    "total_rounds": 3,
-    "current_accuracy": 94.2,
-    "last_global_hash": "0xe2473f35eaa3ccd83b772cce7444a04c7e269b8fe1a35309acc2e06d72927144",
-    "last_tx_hash": "0x410f4d371ec02d4ce319eea9eb1c00b11904163feb092c6833bcc9308e76dabb",
+    "total_rounds": 0,
+    "current_accuracy": None,
+    "last_global_hash": None,
+    "last_tx_hash": None,
     "participating_nodes": ["Hospital-A (Apollo)", "Hospital-B (Aster Medcity)", "Hospital-C (City Central)"],
-    "privacy_mechanism": "Differential Privacy (Gaussian Noise xi ~ N(0, sigma^2))",
-    "history": [
-        {"round": 1, "accuracy": 88.4, "tx": "0x0119c22ca47b80e4..."},
-        {"round": 2, "accuracy": 91.2, "tx": "0x7d614d08189b47a1..."},
-        {"round": 3, "accuracy": 94.2, "tx": "0x410f4d371ec02d4c..."}
-    ]
+    "privacy_mechanism": "Uncertified Gaussian demonstration noise",
+    "history": []
 }
 
 AUDIT_LOGS = [
@@ -111,11 +134,91 @@ AUDIT_LOGS = [
         "action": "RECORD_CREATED_AND_SEALED",
         "status": "VERIFIED_AUTHENTIC",
         "timestamp": "2026-10-26T20:15:00Z",
-        "details": "Initial diagnosis signed by Dr. Neethu Roy and committed to Ganache."
+        "details": "Seeded demo record initialized in the local in-memory ledger."
     }
 ]
 
+EHR_CSV_REQUIRED = {"patient_id", "diagnosis", "age", "resting_bp", "cholesterol"}
+CLINICAL_RANGES = {
+    "age": (1, 120), "sex": (0, 1), "resting_bp": (40, 300),
+    "cholesterol": (50, 1000), "fasting_blood_sugar_mg_dl": (10, 1000),
+    "max_hr": (20, 300), "angina": (0, 1),
+}
+IOMT_METRICS = {
+    "heart_rate_bpm": {"unit": "bpm", "range": (20, 250)},
+    "systolic_bp_mmhg": {"unit": "mmHg", "range": (40, 300)},
+    "spo2_percent": {"unit": "%", "range": (50, 100)},
+    "temperature_c": {"unit": "C", "range": (25, 45)},
+    "glucose_mg_dl": {"unit": "mg/dL", "range": (10, 1000)},
+    "steps_count": {"unit": "steps", "range": (0, 100000)},
+}
+
+
+def registered_patient(patient_id):
+    return next((item for item in USERS_DB.values() if item["id"] == patient_id and item["role"] == "patient"), None)
+
+
+def seal_ehr_record(doctor, patient, diagnosis, clinical_metrics, source_system, recorded_at=None):
+    record_uuid = f"EHR-{str(uuid.uuid4())[:8].upper()}"
+    hospital_name = doctor["hospital_name"]
+    clinical_metrics = dict(clinical_metrics)
+    # Retain the latest raw IoMT observations in the sealed EHR snapshot.
+    latest_by_metric = {}
+    for reading in IOMT_READINGS_DB:
+        if reading["patient_id"] == patient["id"]:
+            metric = reading["metric"]
+            if metric not in latest_by_metric or reading["observed_at"] > latest_by_metric[metric]["observed_at"]:
+                latest_by_metric[metric] = reading
+    if latest_by_metric:
+        clinical_metrics["iomt_observations"] = [
+            {key: value for key, value in reading.items() if key not in ("patient_name",)}
+            for reading in latest_by_metric.values()
+        ]
+
+    record_hash = calculate_ehr_hash(patient["id"], hospital_name, diagnosis, clinical_metrics)
+    ledger_receipt = blockchain_ledger.register_ehr_record(record_uuid, record_hash)
+    tx_hash = ledger_receipt["tx_hash"]
+    created_at = datetime.datetime.now(datetime.timezone.utc).isoformat()
+    record = {
+        "record_uuid": record_uuid, "patient_id": patient["id"], "doctor_id": doctor["id"],
+        "patient_name": patient["name"], "doctor_name": doctor["name"], "hospital_name": hospital_name,
+        "diagnosis": diagnosis, "clinical_metrics": clinical_metrics, "record_hash": record_hash,
+        "blockchain_tx_hash": tx_hash, "qr_code_url": generate_ehr_qr_code({
+            "record_uuid": record_uuid, "patient_id": patient["id"], "record_hash": record_hash,
+            "blockchain_tx_hash": tx_hash,
+        }), "created_at": created_at, "recorded_at": recorded_at or created_at,
+        "source_system": source_system,
+    }
+    EHR_RECORDS_DB[record_uuid] = record
+    AUDIT_LOGS.append({
+        "id": len(AUDIT_LOGS) + 1, "record_uuid": record_uuid, "action": "EHR_HASH_SEALED_LOCAL",
+        "status": "VERIFIED_AUTHENTIC", "timestamp": created_at,
+        "details": f"Imported from {source_system}; local demo-ledger transaction {tx_hash[:16]}...",
+    })
+    return record
+
 class SecureHealthHandler(http.server.BaseHTTPRequestHandler):
+    def authenticated_user(self):
+        header = self.headers.get("Authorization", "")
+        scheme, _, token = header.partition(" ")
+        if scheme.lower() != "bearer" or not token:
+            return None
+        session = SESSIONS.get(token)
+        if not session or session["expires_at"] < time.time():
+            SESSIONS.pop(token, None)
+            return None
+        return session["user"]
+
+    def require_role(self, *roles):
+        user = self.authenticated_user()
+        if not user:
+            self.send_json(401, {"success": False, "message": "Sign in to continue"})
+            return None
+        if roles and user["role"] not in roles:
+            self.send_json(403, {"success": False, "message": "Your account role cannot perform this action"})
+            return None
+        return user
+
     def send_cors_headers(self):
         self.send_header("Access-Control-Allow-Origin", "*")
         self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
@@ -162,6 +265,14 @@ class SecureHealthHandler(http.server.BaseHTTPRequestHandler):
         parsed = urllib.parse.urlparse(self.path)
         path = parsed.path
 
+        if path == "/api/auth/me":
+            user = self.authenticated_user()
+            if not user:
+                self.send_json(401, {"success": False, "message": "Session expired"})
+            else:
+                self.send_json(200, {"success": True, "user": user})
+            return
+
         # Serve Frontend UI
         if path == "/" or path == "/index.html":
             static_dir = os.path.join(os.path.dirname(__file__), "static")
@@ -179,26 +290,46 @@ class SecureHealthHandler(http.server.BaseHTTPRequestHandler):
 
         # API: EHR List
         if path == "/api/ehr/list":
+            user = self.require_role("admin", "doctor", "patient")
+            if not user:
+                return
             query = urllib.parse.parse_qs(parsed.query)
             patient_id = query.get("patient_id", [None])[0]
+            if user["role"] == "patient":
+                patient_id = str(user["id"])
             records = list(EHR_RECORDS_DB.values())
             if patient_id:
                 records = [r for r in records if str(r["patient_id"]) == str(patient_id)]
             self.send_json(200, {"success": True, "records": records})
             return
 
+        if path == "/api/ehr/patients":
+            if not self.require_role("doctor"):
+                return
+            patients = [
+                {"id": user["id"], "name": user["name"]}
+                for user in USERS_DB.values() if user["role"] == "patient"
+            ]
+            self.send_json(200, {"success": True, "patients": patients})
+            return
+
         # API: FL Status
         if path == "/api/fl/status":
+            if not self.require_role("admin"):
+                return
             self.send_json(200, {"success": True, "fl_state": FL_STATE})
             return
 
         # API: Blockchain Blocks & Ledger State
         if path == "/api/blockchain/blocks":
+            if not self.require_role("admin"):
+                return
             self.send_json(200, {
                 "success": True,
                 "contract_address": blockchain_ledger.contract_address,
                 "is_live_ganache": blockchain_ledger.check_live_ganache(),
-                "consensus_protocol": "Lightweight PoS + Byzantine Fault Tolerance (BFT)",
+                "transactions_recorded_on_ganache": False,
+                "consensus_protocol": "In-memory demo ledger (no consensus protocol)",
                 "total_blocks": len(blockchain_ledger.chain),
                 "blocks": blockchain_ledger.get_blocks()
             })
@@ -206,6 +337,8 @@ class SecureHealthHandler(http.server.BaseHTTPRequestHandler):
 
         # API: Admin Stats & System Audit
         if path == "/api/admin/stats":
+            if not self.require_role("admin"):
+                return
             self.send_json(200, {
                 "success": True,
                 "stats": {
@@ -213,8 +346,8 @@ class SecureHealthHandler(http.server.BaseHTTPRequestHandler):
                     "total_users": len(USERS_DB),
                     "fl_rounds": FL_STATE["total_rounds"],
                     "global_model_accuracy": f"{FL_STATE['current_accuracy']}%",
-                    "blockchain_network": "Ethereum Ganache (Local PoS-BFT Testnet)",
-                    "contract_status": "ACTIVE_DEPLOYED",
+                    "blockchain_network": "Local in-memory demo ledger",
+                    "contract_status": "NOT_CONNECTED",
                     "audit_logs": AUDIT_LOGS
                 }
             })
@@ -234,70 +367,79 @@ class SecureHealthHandler(http.server.BaseHTTPRequestHandler):
             email = body.get("email", "").strip().lower()
             password = body.get("password", "")
             user = USERS_DB.get(email)
-            if not user or user["password"] != password:
+            if not user or not verify_password(password, user["password_hash"]):
                 self.send_json(401, {"success": False, "message": "Invalid email or password"})
                 return
+            token = secrets.token_urlsafe(32)
+            safe_user = {key: user[key] for key in ("id", "name", "email", "role", "hospital_name")}
+            SESSIONS[token] = {"user": safe_user, "expires_at": time.time() + 8 * 60 * 60}
             self.send_json(200, {
                 "success": True,
-                "user": {
-                    "id": user["id"],
-                    "name": user["name"],
-                    "email": user["email"],
-                    "role": user["role"],
-                    "hospital_name": user["hospital_name"]
-                },
-                "token": f"token-{user['role']}-authenticated"
+                "user": safe_user,
+                "token": token
             })
+            return
+
+        if path == "/api/auth/register":
+            email = body.get("email", "").strip().lower()
+            name = body.get("name", "").strip()
+            password = body.get("password", "")
+            hospital_name = body.get("hospital_name", "Metro Health General Hospital").strip()
+            if not email or "@" not in email or not name or len(password) < 8:
+                self.send_json(400, {"success": False, "message": "Enter a valid email, name, and password with at least 8 characters"})
+                return
+            if email in USERS_DB:
+                self.send_json(409, {"success": False, "message": "An account with this email already exists"})
+                return
+            new_id = max((user["id"] for user in USERS_DB.values()), default=0) + 1
+            USERS_DB[email] = {"id": new_id, "name": name, "email": email, "password_hash": hash_password(password), "role": "patient", "hospital_name": hospital_name}
+            self.send_json(201, {"success": True, "message": "Patient account created. Sign in to continue."})
+            return
+
+        if path == "/api/auth/logout":
+            header = self.headers.get("Authorization", "")
+            _, _, token = header.partition(" ")
+            SESSIONS.pop(token, None)
+            self.send_json(200, {"success": True})
             return
 
         # ==========================================
         # 2. AI RISK PREDICTION (MODULE 2 & 4)
         # ==========================================
         if path == "/api/ai/predict-risk":
-            age = float(body.get("age", 45))
-            cholesterol = float(body.get("cholesterol", 200))
-            resting_bp = float(body.get("resting_bp", 120))
-            max_hr = float(body.get("max_hr", 150))
-            angina = int(body.get("angina", 0))
-
-            # Clinical risk score calculation
-            risk_score = 0.12
-            if age > 50: risk_score += 0.22
-            if cholesterol > 240: risk_score += 0.24
-            if resting_bp > 140: risk_score += 0.21
-            if max_hr < 120: risk_score += 0.12
-            if angina == 1: risk_score += 0.18
-
-            risk_score = min(max(risk_score, 0.05), 0.98)
-            risk_pct = round(risk_score * 100, 1)
-            level = "High Risk" if risk_pct >= 65 else ("Moderate Risk" if risk_pct >= 40 else "Low Risk")
-
-            self.send_json(200, {
-                "success": True,
-                "risk_probability": risk_pct,
-                "risk_level": level,
-                "factors": {
-                    "age_factor": "Elevated" if age > 50 else "Normal",
-                    "cholesterol_factor": "High (>240 mg/dl)" if cholesterol > 240 else "Normal",
-                    "bp_factor": "Hypertension Stage I/II" if resting_bp > 140 else "Optimal"
-                },
-                "recommendations": [
-                    "Perform stress echocardiogram",
-                    "Evaluate coronary calcium score",
-                    "Enforce strict Mediterranean diet and daily 30m aerobic cardio"
-                ]
-            })
+            if not self.require_role("doctor", "admin"):
+                return
+            if not HAS_RISK_MODEL:
+                self.send_json(503, {"success": False, "message": "The sample risk model dependencies are unavailable"})
+                return
+            try:
+                result = predict_risk(body.get("age", 45), body.get("resting_bp", 120), body.get("cholesterol", 200), body.get("max_hr", 150), body.get("angina", 0))
+            except (TypeError, ValueError) as error:
+                self.send_json(400, {"success": False, "message": str(error)})
+                return
+            self.send_json(200, {"success": True, **result})
             return
 
         # ==========================================
         # 3. EHR CREATION & BLOCKCHAIN SEALING (MODULE 3 & 4)
         # ==========================================
         if path == "/api/ehr/create":
-            patient_id = int(body.get("patient_id", 3))
-            doctor_id = int(body.get("doctor_id", 2))
-            patient_name = body.get("patient_name", "Aswin Krishna")
-            doctor_name = body.get("doctor_name", "Dr. Sarah Jenkins")
-            hospital_name = body.get("hospital_name", "Metro Health General Hospital")
+            user = self.require_role("doctor")
+            if not user:
+                return
+            try:
+                patient_id = int(body.get("patient_id", 3))
+            except (TypeError, ValueError):
+                self.send_json(400, {"success": False, "message": "Choose a valid patient"})
+                return
+            patient = next((item for item in USERS_DB.values() if item["id"] == patient_id and item["role"] == "patient"), None)
+            if not patient:
+                self.send_json(400, {"success": False, "message": "Choose a registered patient"})
+                return
+            doctor_id = user["id"]
+            doctor_name = user["name"]
+            patient_name = patient["name"]
+            hospital_name = user["hospital_name"]
             diagnosis = body.get("diagnosis", "Normal Health Checkup")
             clinical_metrics = body.get("clinical_metrics", {})
 
@@ -306,7 +448,7 @@ class SecureHealthHandler(http.server.BaseHTTPRequestHandler):
             # Calculate deterministic SHA-256 hash
             record_hash = calculate_ehr_hash(patient_id, hospital_name, diagnosis, clinical_metrics)
 
-            # Register on-chain with Blockchain Smart Contract
+            # Store the hash in the local in-memory demo ledger.
             bc_result = blockchain_ledger.register_ehr_record(record_uuid, record_hash)
             tx_hash = bc_result.get("tx_hash")
 
@@ -337,10 +479,10 @@ class SecureHealthHandler(http.server.BaseHTTPRequestHandler):
             AUDIT_LOGS.append({
                 "id": len(AUDIT_LOGS) + 1,
                 "record_uuid": record_uuid,
-                "action": "EHR_SEALED_ON_BLOCKCHAIN",
+                "action": "EHR_HASH_SEALED_LOCAL",
                 "status": "VERIFIED_AUTHENTIC",
                 "timestamp": datetime.datetime.now().isoformat(),
-                "details": f"Created by {doctor_name} at {hospital_name}. Ganache Tx: {tx_hash[:16]}..."
+                "details": f"Created by {doctor_name} at {hospital_name}. Local demo-ledger transaction: {tx_hash[:16]}..."
             })
 
             self.send_json(201, {"success": True, "record": new_record})
@@ -350,12 +492,18 @@ class SecureHealthHandler(http.server.BaseHTTPRequestHandler):
         # 4. QR VERIFICATION & TAMPER PROOF (MODULE 4)
         # ==========================================
         if path == "/api/verify/record":
+            if not self.require_role("admin", "doctor", "patient"):
+                return
             record_uuid = body.get("record_uuid")
             if not record_uuid or record_uuid not in EHR_RECORDS_DB:
                 self.send_json(404, {"success": False, "message": "Record ID not found on system"})
                 return
 
             record = EHR_RECORDS_DB[record_uuid]
+            viewer = self.authenticated_user()
+            if viewer["role"] == "patient" and str(record["patient_id"]) != str(viewer["id"]):
+                self.send_json(403, {"success": False, "message": "Patients can only verify their own records"})
+                return
             
             # Recalculate hash from CURRENT stored data
             recomputed_hash = calculate_ehr_hash(
@@ -365,7 +513,7 @@ class SecureHealthHandler(http.server.BaseHTTPRequestHandler):
                 record["clinical_metrics"]
             )
 
-            # Query Blockchain Smart Contract (verifyEHR function)
+            # Compare against the local in-memory ledger entry.
             bc_result = blockchain_ledger.verify_ehr_record(record_uuid, recomputed_hash)
             is_authentic = bc_result.get("is_valid", False)
 
@@ -375,7 +523,7 @@ class SecureHealthHandler(http.server.BaseHTTPRequestHandler):
                 "action": "VERIFICATION_CHECK",
                 "status": "VERIFIED_AUTHENTIC" if is_authentic else "TAMPER_DETECTED",
                 "timestamp": datetime.datetime.now().isoformat(),
-                "details": f"Blockchain Block #{bc_result.get('block_number')}: " + ("Hash matched on-chain smart contract" if is_authentic else "CRITICAL: Database contents altered without blockchain consensus!")
+                "details": f"Local ledger block #{bc_result.get('block_number')}: " + ("Hash matched" if is_authentic else "Hash mismatch; record contents differ from the sealed value")
             }
             AUDIT_LOGS.append(audit)
 
@@ -398,6 +546,8 @@ class SecureHealthHandler(http.server.BaseHTTPRequestHandler):
 
         # DEMO TAMPERING ENDPOINT FOR VIVA EXAMINERS
         if path == "/api/demo/tamper-record":
+            if not self.require_role("admin"):
+                return
             record_uuid = body.get("record_uuid")
             if record_uuid in EHR_RECORDS_DB:
                 EHR_RECORDS_DB[record_uuid]["diagnosis"] = "[TAMPERED DATA] Malicious Alteration Detected!"
@@ -414,30 +564,33 @@ class SecureHealthHandler(http.server.BaseHTTPRequestHandler):
         # 5. FEDERATED LEARNING TRIGGER (MODULE 2 & 3)
         # ==========================================
         if path == "/api/fl/trigger-round":
+            if not self.require_role("admin"):
+                return
             rounds = int(body.get("rounds", 3))
             epsilon = float(body.get("epsilon", 1.0))
             
             if HAS_FL_ENGINE:
-                results = run_federated_training(rounds=rounds, epsilon=epsilon)
+                try:
+                    results = run_federated_training(rounds=rounds, epsilon=epsilon)
+                except ValueError as error:
+                    self.send_json(400, {"success": False, "message": str(error)})
+                    return
+                except Exception as error:
+                    print(f"[FL simulation error] {error}")
+                    self.send_json(500, {"success": False, "message": "FL simulation failed; no result was recorded"})
+                    return
                 FL_STATE["total_rounds"] += rounds
                 FL_STATE["current_accuracy"] = results["final_accuracy"]
                 FL_STATE["last_global_hash"] = results["final_global_hash"]
                 FL_STATE["last_tx_hash"] = results["latest_tx_hash"]
                 FL_STATE["history"].extend(results["history"])
 
-                # Commit global model and node update hashes to Blockchain Smart Contract
+                # Append the simulated global model hash to the local demo ledger.
                 blockchain_ledger.publish_global_fl_model(FL_STATE["total_rounds"], results["final_global_hash"])
 
                 self.send_json(200, {"success": True, "results": results})
             else:
-                self.send_json(200, {
-                    "success": True,
-                    "results": {
-                        "final_accuracy": 95.2,
-                        "final_global_hash": "0xe2473f35eaa3ccd83b772cce7444a04c7e269b8fe1a35309acc2e06d72927144",
-                        "total_rounds": rounds
-                    }
-                })
+                self.send_json(503, {"success": False, "message": "FL simulation dependencies are unavailable; no training result was generated."})
             return
 
         self.send_error(404, "Endpoint not found")

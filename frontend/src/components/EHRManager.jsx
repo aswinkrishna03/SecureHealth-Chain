@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
+import { apiFetch } from '../api';
 
-export default function EHRManager() {
+export default function EHRManager({ hospitalName }) {
   const [records, setRecords] = useState([]);
+  const [patients, setPatients] = useState([]);
   const [showModal, setShowModal] = useState(false);
   const [selectedQR, setSelectedQR] = useState(null);
   const [formData, setFormData] = useState({
-    patient_name: 'Aswin Krishna',
-    hospital_name: 'Metro Health General Hospital',
+    patient_id: '3',
     diagnosis: 'Cardiovascular Assessment - Normal Sinus',
     resting_bp: 122,
     cholesterol: 195,
@@ -14,7 +15,7 @@ export default function EHRManager() {
 
   const fetchRecords = async () => {
     try {
-      const res = await fetch('/api/ehr/list');
+      const res = await apiFetch('/api/ehr/list');
       const data = await res.json();
       if (data.records) setRecords(data.records);
     } catch (e) {
@@ -24,17 +25,22 @@ export default function EHRManager() {
 
   useEffect(() => {
     fetchRecords();
+    apiFetch('/api/ehr/patients').then((res) => res.json()).then((data) => {
+      if (data.patients) {
+        setPatients(data.patients);
+        if (data.patients.length) setFormData((current) => ({ ...current, patient_id: String(data.patients[0].id) }));
+      }
+    }).catch((e) => console.error(e));
   }, []);
 
   const handleCreate = async (e) => {
     e.preventDefault();
     try {
-      const res = await fetch('/api/ehr/create', {
+      const res = await apiFetch('/api/ehr/create', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          patient_name: formData.patient_name,
-          hospital_name: formData.hospital_name,
+          patient_id: Number(formData.patient_id),
           diagnosis: formData.diagnosis,
           clinical_metrics: {
             resting_bp: formData.resting_bp,
@@ -60,14 +66,14 @@ export default function EHRManager() {
             <span className="text-xs bg-cyan-900 text-cyan-300 px-2 py-0.5 rounded border border-cyan-700">Module 1 & 3</span>
           </h2>
           <p className="text-sm text-slate-400">
-            Create clinical patient records. Hashes are permanently sealed onto Ethereum Ganache.
+            Create clinical patient records. The local demo ledger stores a tamper-evident hash; connect a deployed contract for Ethereum transactions.
           </p>
         </div>
         <button
           onClick={() => setShowModal(true)}
           className="px-4 py-2 bg-gradient-to-r from-cyan-600 to-emerald-600 hover:from-cyan-500 hover:to-emerald-500 text-white rounded-lg text-sm font-semibold shadow-md transition"
         >
-          ➕ New Patient Diagnosis & Blockchain Seal
+          ➕ New Patient Diagnosis & Hash Seal
         </button>
       </div>
 
@@ -124,27 +130,19 @@ export default function EHRManager() {
         <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-4">
             <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-              <h3 className="text-lg font-bold text-white">Create & Blockchain-Seal EHR</h3>
+              <h3 className="text-lg font-bold text-white">Create EHR & Seal Its Hash</h3>
               <button onClick={() => setShowModal(false)} className="text-slate-400 hover:text-white">✕</button>
             </div>
             <form onSubmit={handleCreate} className="space-y-3 text-xs">
               <div>
-                <label className="block font-semibold text-slate-400 mb-1">Patient Name</label>
-                <input
-                  type="text"
-                  value={formData.patient_name}
-                  onChange={(e) => setFormData({ ...formData, patient_name: e.target.value })}
-                  className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-white"
-                />
+                <label className="block font-semibold text-slate-400 mb-1">Registered Patient</label>
+                <select required value={formData.patient_id} onChange={(e) => setFormData({ ...formData, patient_id: e.target.value })} className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-white">
+                  {patients.map((patient) => <option key={patient.id} value={patient.id}>{patient.name}</option>)}
+                </select>
               </div>
               <div>
                 <label className="block font-semibold text-slate-400 mb-1">Hospital / Clinic</label>
-                <input
-                  type="text"
-                  value={formData.hospital_name}
-                  onChange={(e) => setFormData({ ...formData, hospital_name: e.target.value })}
-                  className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-white"
-                />
+                <input readOnly value={hospitalName} className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-slate-400" />
               </div>
               <div>
                 <label className="block font-semibold text-slate-400 mb-1">Diagnosis</label>
@@ -187,7 +185,7 @@ export default function EHRManager() {
                   type="submit"
                   className="px-4 py-2 bg-gradient-to-r from-cyan-600 to-emerald-600 hover:from-cyan-500 hover:to-emerald-500 text-white rounded-lg text-xs font-bold shadow"
                 >
-                  🔐 Anchor Hash to Blockchain & Generate QR
+                  🔐 Seal Record Hash & Generate QR
                 </button>
               </div>
             </form>
@@ -205,7 +203,7 @@ export default function EHRManager() {
             </div>
             <p className="text-xs font-mono text-cyan-400">{selectedQR.record_uuid}</p>
             <p className="text-xs text-slate-400">
-              Scan this QR code during clinical checks to immediately verify against the Ethereum Ganache ledger.
+              Scan this QR code during clinical checks to verify the record hash against the local demo ledger.
             </p>
             <button
               onClick={() => setSelectedQR(null)}

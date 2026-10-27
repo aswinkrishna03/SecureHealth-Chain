@@ -2,12 +2,14 @@ import os
 import json
 from typing import Dict, Any
 
-def generate_ehr_qr_code(record_data: Dict[str, Any], output_dir: str = "backend/static/qrcodes") -> str:
+def generate_ehr_qr_code(record_data: Dict[str, Any], output_dir: str = None) -> str:
     """
     Generates a secure QR code embedding the record identifier,
     cryptographic hash, and blockchain transaction receipt.
     Gracefully handles environments where PIL/qrcode library is pending installation.
     """
+    if output_dir is None:
+        output_dir = os.path.join(os.path.dirname(__file__), "..", "static", "qrcodes")
     os.makedirs(output_dir, exist_ok=True)
     record_uuid = record_data.get("record_uuid", "record")
     file_path = os.path.join(output_dir, f"{record_uuid}.png")

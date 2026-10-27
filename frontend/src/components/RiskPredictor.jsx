@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { apiFetch } from '../api';
 
 export default function RiskPredictor() {
   const [formData, setFormData] = useState({
@@ -6,7 +7,6 @@ export default function RiskPredictor() {
     resting_bp: 138,
     cholesterol: 248,
     max_hr: 128,
-    fbs: 0,
     angina: 0
   });
 
@@ -17,7 +17,7 @@ export default function RiskPredictor() {
     e.preventDefault();
     setLoading(true);
     try {
-      const res = await fetch('/api/ai/predict-risk', {
+      const res = await apiFetch('/api/ai/predict-risk', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData)
@@ -44,7 +44,7 @@ export default function RiskPredictor() {
               </span>
             </div>
             <p className="text-xs text-slate-400 mt-1">
-              Evaluates clinical vitals using the globally trained Federated Neural Model.
+              Sample-dataset logistic model for education only. It is not clinically validated and cannot diagnose disease.
             </p>
           </div>
 
@@ -87,17 +87,6 @@ export default function RiskPredictor() {
                 />
               </div>
               <div>
-                <label className="block text-xs font-semibold text-slate-400 mb-1">Fasting Blood Sugar &gt; 120 mg/dl</label>
-                <select
-                  value={formData.fbs}
-                  onChange={(e) => setFormData({ ...formData, fbs: e.target.value })}
-                  className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-white focus:border-cyan-500 focus:outline-none"
-                >
-                  <option value="0">False (&le; 120 mg/dl)</option>
-                  <option value="1">True (&gt; 120 mg/dl)</option>
-                </select>
-              </div>
-              <div>
                 <label className="block text-xs font-semibold text-slate-400 mb-1">Exercise Induced Angina</label>
                 <select
                   value={formData.angina}
@@ -115,7 +104,7 @@ export default function RiskPredictor() {
               disabled={loading}
               className="w-full py-3 bg-gradient-to-r from-cyan-600 to-emerald-600 hover:from-cyan-500 hover:to-emerald-500 text-white font-bold rounded-lg shadow-lg flex items-center justify-center gap-2 transition"
             >
-              {loading ? 'Evaluating...' : '⚡ Run Federated AI Risk Inference'}
+              {loading ? 'Evaluating...' : '⚡ Run Sample-Data Risk Model'}
             </button>
           </form>
         </div>
@@ -130,6 +119,7 @@ export default function RiskPredictor() {
                   {result ? `${result.risk_probability}%` : '--%'}
                 </span>
               </div>
+              {result?.held_out_accuracy != null && <p className="mt-2 text-xs text-slate-500">Sample holdout accuracy: {result.held_out_accuracy}%</p>}
               <div className={`mt-4 inline-block text-xs font-bold uppercase px-3 py-1 rounded-full ${result?.risk_probability >= 65 ? 'bg-rose-950 text-rose-400 border border-rose-800' : (result?.risk_probability >= 40 ? 'bg-amber-950 text-amber-400 border border-amber-800' : 'bg-slate-800 text-slate-300')}`}>
                 {result ? result.risk_level : 'Awaiting Input'}
               </div>
@@ -143,8 +133,8 @@ export default function RiskPredictor() {
                 result.recommendations.map((rec, i) => <li key={i}>{rec}</li>)
               ) : (
                 <>
-                  <li>Input clinical parameters and click "Run Federated AI Risk Inference".</li>
-                  <li>Federated model incorporates Differential Privacy to guarantee patient data locality.</li>
+                  <li>Enter the available parameters and run the sample-data model.</li>
+                  <li>This educational estimate is not a diagnosis or treatment recommendation.</li>
                 </>
               )}
             </ul>

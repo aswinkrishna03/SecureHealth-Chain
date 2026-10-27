@@ -11,6 +11,7 @@ class BlockchainService:
     def __init__(self):
         self.w3 = Web3(Web3.HTTPProvider(GANACHE_URL))
         self.contract = None
+        self.simulated_records = {}
         self.is_connected = self.w3.is_connected()
         
         # Load ABI if contract address is configured
@@ -47,11 +48,17 @@ class BlockchainService:
         # Fallback simulation mode for testing when Ganache is offline
         import hashlib
         simulated_tx = "0x" + hashlib.sha256((record_uuid + record_hash_hex).encode()).hexdigest()
+        self.simulated_records[record_uuid] = {
+            "record_hash": record_hash_hex,
+            "tx_hash": simulated_tx,
+            "timestamp": int(__import__("time").time()),
+        }
         return {
             "success": True,
             "tx_hash": simulated_tx,
             "block_number": 1042,
-            "mode": "simulated_ledger"
+            "mode": "simulated_ledger",
+            "stored_hash": record_hash_hex,
         }
 
     def verify_ehr(self, record_uuid: str, incoming_hash_hex: str) -> Tuple[bool, str, Optional[int]]:
@@ -68,7 +75,14 @@ class BlockchainService:
                 print(f"[Blockchain Verification Error] {e}")
                 return False, "", None
         
-        # Simulated fallback verification
-        return True, "0x9876543210FedCba9876543210FedCba98765432", 1784500000
+        # Simulation must still compare against a value that was previously sealed.
+        entry = self.simulated_records.get(record_uuid)
+        if not entry:
+            return False, "", None
+        return (
+            entry["record_hash"] == incoming_hash_hex,
+            "SIMULATED_LEDGER",
+            entry["timestamp"],
+        )
 
 blockchain_service = BlockchainService()

@@ -1,12 +1,13 @@
 import React from 'react';
 
-export default function Navbar({ currentRole, setRole, activeTab, setActiveTab }) {
-  const tabs = [
-    { id: 'doctor', label: '📋 Clinical Records & Sealing' },
-    { id: 'predict', label: '🧠 AI Disease Risk Predictor' },
-    { id: 'verify', label: '🔍 QR Scan & Blockchain Verification' },
-    { id: 'fl', label: '🌐 Federated Learning & Telemetry' },
+export default function Navbar({ user, onLogout, activeTab, setActiveTab }) {
+  const allTabs = [
+    { id: 'doctor', label: '📋 Clinical Records & Sealing', roles: ['doctor'] },
+    { id: 'predict', label: '🧠 AI Disease Risk Predictor', roles: ['doctor', 'admin'] },
+    { id: 'verify', label: '🔍 QR Scan & Hash Verification', roles: ['doctor', 'patient', 'admin'] },
+    { id: 'fl', label: '🌐 Federated Learning & Telemetry', roles: ['admin'] },
   ];
+  const tabs = allTabs.filter((tab) => tab.roles.includes(user.role));
 
   return (
     <header className="border-b border-slate-800 bg-slate-900/90 sticky top-0 z-50">
@@ -30,25 +31,9 @@ export default function Navbar({ currentRole, setRole, activeTab, setActiveTab }
           </div>
         </div>
 
-        {/* Role Selector */}
-        <div className="flex items-center space-x-3">
-          <div className="flex bg-slate-800 p-1 rounded-lg border border-slate-700 text-xs font-medium">
-            {['doctor', 'patient', 'admin'].map((role) => (
-              <button
-                key={role}
-                onClick={() => setRole(role)}
-                className={`px-3 py-1.5 rounded-md capitalize transition ${
-                  currentRole === role
-                    ? 'bg-cyan-600 text-white font-semibold'
-                    : 'text-slate-400 hover:text-white'
-                }`}
-              >
-                {role === 'doctor' && '👨‍⚕️ Doctor'}
-                {role === 'patient' && '👤 Patient'}
-                {role === 'admin' && '⚙️ Admin / FL'}
-              </button>
-            ))}
-          </div>
+        <div className="flex items-center gap-3">
+          <span className="hidden sm:block text-xs text-slate-400">{user.name} · {user.role}</span>
+          <button onClick={onLogout} className="text-xs border border-slate-700 rounded-lg px-3 py-2 text-slate-300 hover:text-white">Sign out</button>
         </div>
       </div>
 

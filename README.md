@@ -17,11 +17,12 @@ This project is directly designed and modeled around the breakthrough research p
 
 | EPP-BCFL Research Concept | Research Paper Specification | SecureHealth Chain Implementation |
 | :--- | :--- | :--- |
-| **Edge Nodes Layer** | Local model training on private node datasets without sharing raw patient records. | **Hospital Node Clients (`fl_core/client.py`)**: Individual clinics/hospitals train local classifiers on private tabular EHR datasets. |
-| **Differential Privacy (DP)** | $\theta^{t+1}_i = \theta^t_i - \eta \nabla L_i(\theta^t_i, D_i) + \xi$ where $\xi \sim \mathcal{N}(0, \sigma^2)$ | Gaussian noise layer injected into model updates with configurable privacy budget ($\epsilon$), defending against inference attacks while preserving accuracy (>92%). |
-| **Adaptive Model Aggregation (AMA)** | Aggregates updates based on data quality, node reliability, and sample size weighting. | **Flower Aggregator (`fl_core/server.py`)**: Sample-weighted FedAvg coordinating multi-hospital learning rounds. |
-| **Blockchain Consensus & Ledger** | PoS + BFT consensus for tamper-proof auditing and decentralized update verification. | **Ethereum Ganache & Solidity (`SecureHealthRegistry.sol`)**: Records cryptographic SHA-256 hashes of EHRs and training updates on a local private blockchain. |
-| **Clinical Integrity & Verification** | Tamper-evident verification without exposing patient data. | **QR-Code Scan & Blockchain Verification**: Every EHR generates a signed QR code linking to on-chain transaction hashes. Tampering is flagged instantly. |
+| **Edge Nodes Layer** | Local model training on private node datasets without sharing raw patient records. | Flower client/server code is present; the dashboard currently runs a local simulation with synthetic silo partitions. |
+| **Differential Privacy (DP)** | Per-example clipping, calibrated Gaussian noise, and composition accounting. | Training uses clipped per-patient gradients and an RDP epsilon/delta bound for one requested training invocation. Exact evaluation metrics and repeated invocations are outside that bound. |
+| **Homomorphic Encryption (HE)** | Encrypt client model updates and aggregate without decrypting individual updates. | TenSEAL CKKS encrypts each node model; the coordinator performs sample-weighted vector aggregation on ciphertexts and decrypts only the aggregate. This local demo keeps the key custodian in the same process. |
+| **Adaptive Model Aggregation (AMA)** | Paper discusses adaptive aggregation, while its explicit global-model equation is sample-count weighted FedAvg. | The dashboard implements the explicit FedAvg equation. The paper does not give a complete AMA weighting formula, so the simulation does not invent one. |
+| **Blockchain Consensus & Ledger** | PoS + BFT consensus for tamper-proof auditing and decentralized update verification. | The dashboard uses an in-memory Python ledger. The Solidity contract is present but not wired to these API routes. |
+| **Clinical Integrity & Verification** | Tamper-evident verification without exposing patient data. | QR codes carry a record identifier and hash reference; verification compares current record content with the local demo ledger. |
 
 ---
 
@@ -32,17 +33,16 @@ This project is directly designed and modeled around the breakthrough research p
                     |        REACT.JS FRONTEND           |
                     | [Admin]     [Doctor]     [Patient] |
                     +-----------------+------------------+
-                                      | HTTP REST / JWT
+                                      | HTTP REST / opaque demo token
                     +-----------------v------------------+
-                    |       FLASK REST BACKEND API       |
-                    |   (Port 5000: Routes, Auth, QR)    |
+                    |   Python standard-library API       |
+                    |   (Port 5000: Auth, EHR, QR)        |
                     +--------+------------------+--------+
                              |                  |
            +-----------------v----+      +------v-------------------+
-           |    MYSQL DATABASE    |      |  ETHEREUM GANACHE LEDGER |
-           | Users, EHR Metadata, |      |  SecureHealthRegistry.sol|
-           | Verification Logs    |      |  Immutable Record Hashes |
-           +----------------------+      +--------------------------+
+           |  In-memory demo data |      | In-memory Python ledger  |
+           | Users, EHR, audit    |      | Solidity not connected   |
+           +---------------------+      +--------------------------+
                                                      ^
                                                      | Model Update Hashes
            +-----------------------------------------+--------------+
@@ -59,28 +59,31 @@ This project is directly designed and modeled around the breakthrough research p
 ```
 
 ### Module 1: User Authentication & Role Management
-- Secure registration and login for **Admin**, **Doctor**, and **Patient** roles.
-- Role-based dashboard access, route guards, and permissions.
+- Demo login for **Admin**, **Doctor**, and **Patient** roles; public registration creates patient accounts only.
+- Role-based dashboard visibility and API authorization use expiring in-memory bearer sessions. Restarting the server resets users and sessions.
 - Patient EHR profile upload and management.
 - Doctor interface for reviewing patient clinical records and AI predictions.
 
 ### Module 2: Local AI Model & Federated Learning Client
 - Local training of disease prediction models (e.g. Cardiovascular Heart Disease) on hospital/node-level EHR data.
+- Each client clips per-patient logistic-loss gradients to L2 norm `C=1`, adds calibrated Gaussian noise, and accounts for all local steps and requested rounds with an RDP bound (`delta=1e-5`). The reported guarantee applies to training updates in one request; exact evaluation metrics and repeated requests are not covered.
+- The coordinator applies the paper's explicit FedAvg equation over TenSEAL CKKS ciphertext vectors, weighted by each node's public local training count. The ephemeral secret key remains in the same process for this demo; production requires a separate key custodian or threshold decryption.
+- Install `backend/requirements.txt` to add the pinned TenSEAL dependency used for CKKS encryption.
 - Federated Learning client setup using **Flower (`flwr`)**.
 - Model update generation without sharing raw patient data.
-- Differential Privacy perturbation ($\xi \sim \mathcal{N}(0, \sigma^2)$) applied to model weights before submission.
 - Evaluation and accuracy reporting prior to parameter exchange.
 
-### Module 3: Federated Aggregation & Blockchain Hash Storage
+### Module 3: Federated Aggregation & Hash Audit
 - Central FL server aggregating model updates using **Federated Averaging (FedAvg)**.
 - Cryptographic SHA-256 hashing of model updates ($H_i$) and medical records ($H_{\text{EHR}}$).
-- Tamper-evident storage on a **Ganache-based Ethereum blockchain** via Solidity smart contracts.
+- The current dashboard stores hashes in a local in-memory demo ledger. Solidity/Ganache integration remains future work.
 - Global model update generation and redistribution to nodes.
 - Validation of stored hashes against incoming updates before acceptance.
 
-### Module 4: AI Health Risk Dashboard & QR Verification
-- AI Health Risk Prediction Dashboard showing disease risk probability, clinical indicators, and blockchain status.
-- QR code generation embedding the blockchain transaction hash for each medical record.
+### Module 4: Risk Score Dashboard & QR Verification
+- Local federated-training demo automatically reads `~/Downloads/synthea_sample_data_csv_latest.zip` when present (override with `SYNTHEA_DATA_ZIP`); otherwise it uses the bundled heart-disease sample.
+- The Synthea path uses demographics and selected latest vitals/labs to classify recorded diabetes/prediabetes status across three deterministic virtual edge partitions. This small synthetic sample is educational, not a clinical model or evidence of real multi-hospital federation.
+- QR code generation embeds a record identifier and hash reference for verification against the local demo ledger.
 - QR-based scan-and-verify workflow for authorized record integrity checks.
 - Audit logging of verification events, timestamps, and tamper alerts.
 
@@ -90,8 +93,8 @@ This project is directly designed and modeled around the breakthrough research p
 
 - **Frontend**: React.js, TailwindCSS / Bootstrap, Axios, `html5-qrcode` / `react-qr-reader`
 - **Backend**: Python 3.11, Flask, Flask-CORS, PyCryptodome, QRCode, Pillow
-- **Database**: MySQL Server (with `mysql-connector-python` & `SQLAlchemy`)
-- **Blockchain**: Ethereum Ganache, Solidity (`v0.8.19`), Web3.py / Truffle
+- **Database**: MySQL schema is included but the demo API currently uses in-memory data
+- **Blockchain**: Solidity contract and optional Ganache service; not integrated into the demo API
 - **AI & Federated Learning**: Flower (`flwr`), PyTorch, Scikit-learn, NumPy, Pandas
 
 ---
@@ -111,30 +114,38 @@ This project is directly designed and modeled around the breakthrough research p
 cd backend
 pip install -r requirements.txt
 ```
+The React app uses `server.py`, which provides the Python standard-library API. `app.py` is an earlier experimental Flask API and is not compatible with the current sign-in flow. MySQL and Ganache components are not yet wired into every dashboard route.
 
-### Step 2: Set Up Database (MySQL)
-Run the SQL schema in your MySQL environment:
-```powershell
-mysql -u root -p < backend/schema.sql
-```
+### Step 2: Optional Integrations
+The dashboard demo does not use MySQL or Ganache yet. `backend/schema.sql` and the Solidity contract are project artifacts for future integration; starting these services does not connect them to `server.py`.
 
-### Step 3: Start Ganache Ethereum Blockchain
-Launch Ganache GUI (listening on `HTTP://127.0.0.1:7545`) or run the CLI:
-```powershell
-npx ganache --port 7545
-```
-
-### Step 4: Run the Flask Backend
+### Step 3: Run the Demo API
 ```powershell
 cd backend
-python app.py
+python server.py
 ```
-*The backend API will start on `http://127.0.0.1:5000`.*
+The API will start on `http://127.0.0.1:5000`. The React development server proxies API and QR requests to it.
+
+Demo accounts:
+- Doctor: `doctor@securehealth.org` / `doctor`
+- Patient: `patient@securehealth.org` / `patient`
+- Admin: `admin@securehealth.org` / `admin`
+
+The demo server keeps users, records, sessions, audit events, and its ledger in memory. Restarting it resets the demo state. Its current ledger is a local Python simulation; the Solidity contract and Ganache transaction path require separate deployment and integration before the system can claim on-chain storage.
 
 ---
 
-### Step 5: Test Federated Learning Simulation (Flower)
-In two separate terminal windows:
+### Step 4: Run the React Frontend
+In another terminal:
+```powershell
+cd frontend
+npm install
+npm run dev
+```
+Open the Vite URL shown in the terminal (normally `http://localhost:3000`).
+
+### Optional: Run the Separate Flower Client/Server
+These processes are independent of the dashboard's local training simulation. In separate terminals from the repository root:
 1. **Terminal 1 (FL Server Aggregator)**:
    ```powershell
    python fl_core/server.py
@@ -151,29 +162,28 @@ In two separate terminal windows:
 
 ---
 
-## 5. Live Demonstration Workflow for Project Viva
+## 5. Demo Workflow
 
 1. **Role Login**:
-   - Log in as **Doctor** (`doctor@securehealth.org` / `doctor123`).
+   - Sign in as **Doctor** (`doctor@securehealth.org` / `doctor`).
 2. **AI Health Risk Prediction**:
    - Open the Risk Predictor form.
    - Enter patient clinical vitals: Age (58), BP (145), Cholesterol (260), Max HR (115), Angina (Yes).
-   - Click **"Predict Disease Risk"** $\rightarrow$ View risk probability (e.g., **85.0% - High Risk**).
-3. **Sealing EHR with Blockchain & QR**:
+   - Review the sample-data logistic-model score and holdout accuracy; neither is clinically validated or for diagnosis.
+3. **Sealing EHR hash and QR**:
    - Fill in Diagnosis: *"Coronary Artery Disease Stage II"*.
-   - Click **"Sign & Seal Record to Blockchain"**.
-   - The backend computes the canonical SHA-256 hash, registers it onto Ethereum Ganache, and generates a tamper-evident QR code embedding the transaction hash.
+   - Click **"Seal Record Hash & Generate QR"**.
+   - The demo API computes a canonical SHA-256 hash and stores it in its local in-memory ledger.
 4. **QR Code Verification**:
-   - Log in as **Patient** (`patient@securehealth.org`) or open the **Verify Record** scanner.
-   - Scan or view the QR code: Status shows **"VERIFIED AUTHENTIC & IMMUTABLE"** with Ganache Block Number and Timestamp.
+   - Sign in as **Patient** (`patient@securehealth.org` / `patient`) or Doctor, then scan the QR code or enter its record ID.
+   - Verification compares the current record hash against the demo ledger entry.
 5. **Tamper-Detection Proof (Viva Highlight)**:
-   - Trigger the demonstration tampering endpoint (`/api/demo/tamper-record`).
-   - Re-scan the QR code.
-   - The system immediately flags **"WARNING: RECORD TAMPERED"** because the recomputed hash does not match the on-chain Ganache hash!
+   - Sign in as **Admin** (`admin@securehealth.org` / `admin`) and use the tamper demo control.
+   - Verify the record again to see the hash mismatch flagged.
 
 ---
 
 ## 6. Publications & Deliverables Aligned
 - **Journal/Conference Paper**: Manuscript draft based on EPP-BCFL lightweight adaptation and tabular clinical benchmarking.
-- **Web Application**: Fully functional role-based healthcare portal with Ganache smart contracts and Flower federated aggregation.
+- **Web Application**: Role-gated educational prototype. Persistent storage, live smart-contract integration, formal privacy accounting, and a clinically validated risk model remain future work.
 

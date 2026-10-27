@@ -195,7 +195,8 @@ def create_ehr():
 
     return jsonify({
         "success": True,
-        "message": "EHR created and sealed on Ethereum blockchain",
+        "message": "EHR sealed on Ethereum blockchain" if bc_result.get("mode") == "live_blockchain" else "EHR sealed in the in-memory demo ledger",
+        "ledger_mode": bc_result.get("mode"),
         "record": EHR_RECORDS_DB[record_uuid]
     }), 201
 

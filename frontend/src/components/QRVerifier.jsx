@@ -1,14 +1,33 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import { Html5QrcodeScanner } from 'html5-qrcode';
+import { apiFetch } from '../api';
 
-export default function QRVerifier() {
+export default function QRVerifier({ role }) {
   const [uuid, setUuid] = useState('EHR-DEMO-001');
   const [auditResult, setAuditResult] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [scanning, setScanning] = useState(false);
+
+  useEffect(() => {
+    if (!scanning) return undefined;
+    const scanner = new Html5QrcodeScanner('securehealth-qr-reader', { fps: 10, qrbox: 230 }, false);
+    scanner.render((decoded) => {
+      try {
+        const payload = JSON.parse(decoded);
+        if (payload.record_uuid) setUuid(payload.record_uuid);
+      } catch {
+        if (decoded.trim()) setUuid(decoded.trim());
+      }
+      setScanning(false);
+      scanner.clear().catch(() => {});
+    }, () => {});
+    return () => { scanner.clear().catch(() => {}); };
+  }, [scanning]);
 
   const handleVerify = async () => {
     setLoading(true);
     try {
-      const res = await fetch('/api/verify/record', {
+      const res = await apiFetch('/api/verify/record', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ record_uuid: uuid })
@@ -24,7 +43,7 @@ export default function QRVerifier() {
 
   const handleTamperDemo = async () => {
     try {
-      const res = await fetch('/api/demo/tamper-record', {
+      const res = await apiFetch('/api/demo/tamper-record', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ record_uuid: uuid })
@@ -49,7 +68,7 @@ export default function QRVerifier() {
               </span>
             </div>
             <p className="text-xs text-slate-400 mt-1">
-              Cross-checks the current record data against the immutable Ethereum Ganache ledger.
+              Cross-checks the current record data against the sealed hash in the local demo ledger.
             </p>
           </div>
 
@@ -63,20 +82,25 @@ export default function QRVerifier() {
             />
           </div>
 
+          <button onClick={() => setScanning((value) => !value)} className="w-full py-2 border border-slate-700 rounded-lg text-slate-300 hover:text-white text-sm">
+            {scanning ? 'Close camera scanner' : 'Scan record QR code'}
+          </button>
+          {scanning && <div id="securehealth-qr-reader" className="overflow-hidden rounded-lg bg-white" />}
+
           <button
             onClick={handleVerify}
             disabled={loading}
             className="w-full py-2.5 bg-cyan-600 hover:bg-cyan-500 text-white font-semibold rounded-lg text-sm shadow transition"
           >
-            {loading ? 'Querying Blockchain...' : '🔍 Verify Authenticity on Blockchain'}
+            {loading ? 'Checking sealed hash...' : '🔍 Verify record integrity'}
           </button>
 
-          <div className="pt-4 border-t border-slate-800">
+          {role === 'admin' && <div className="pt-4 border-t border-slate-800">
             <span className="text-xs font-bold text-rose-400 uppercase tracking-wide block mb-1">
               Examiner Viva Demonstration:
             </span>
             <p className="text-xs text-slate-400 mb-3">
-              Simulate an unauthorized database hack or record modification without blockchain consensus:
+              Admin-only demonstration that edits the in-memory record so integrity verification can detect the change.
             </p>
             <button
               onClick={handleTamperDemo}
@@ -84,7 +108,7 @@ export default function QRVerifier() {
             >
               ⚠️ Maliciously Alter Database Record (Simulate Tampering)
             </button>
-          </div>
+          </div>}
         </div>
 
         {/* Audit Result Display */}
@@ -110,15 +134,15 @@ export default function QRVerifier() {
                   : (auditResult ? 'CRITICAL ALERT: RECORD TAMPERED!' : 'Ready to Verify')}
               </h4>
               <p className="text-xs text-slate-400">
-                {auditResult?.is_authentic 
-                  ? 'SHA-256 hash matches the on-chain Ganache smart contract ledger. Record is intact and untampered.' 
-                  : (auditResult ? 'Hash mismatch detected! The clinical database record was modified without blockchain consensus!' : 'Click "Verify Authenticity" to perform cryptographic hash matching against Ganache.')}
+              {auditResult?.is_authentic
+                  ? 'The recomputed SHA-256 hash matches the locally sealed record hash.'
+                  : (auditResult ? 'Hash mismatch detected. The record data differs from the sealed copy.' : 'Verify the current record data against its sealed hash.')}
               </p>
             </div>
 
             <div className="mt-4 space-y-2 text-xs font-mono">
               <div className="p-2 rounded bg-slate-950 border border-slate-800/80">
-                <span className="text-slate-500 block">On-Chain Blockchain Hash:</span>
+                <span className="text-slate-500 block">Sealed record hash:</span>
                 <span className="text-slate-300 break-all">{auditResult?.stored_hash || '--'}</span>
               </div>
               <div className="p-2 rounded bg-slate-950 border border-slate-800/80">
@@ -129,7 +153,7 @@ export default function QRVerifier() {
           </div>
 
           <div className="mt-4 pt-3 border-t border-slate-800 flex items-center justify-between text-xs text-slate-500">
-            <span>Consensus: PoS-BFT Ganache</span>
+                <span>Mode: in-memory demo ledger</span>
             <span>Checked: {auditResult ? new Date().toLocaleTimeString() : '--'}</span>
           </div>
         </div>

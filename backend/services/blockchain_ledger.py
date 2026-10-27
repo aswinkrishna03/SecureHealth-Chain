@@ -1,11 +1,8 @@
-"""
-SecureHealth Chain - Ethereum & Lightweight PoS Blockchain Ledger Engine
-Implements the Layer 3 Blockchain Network Layer defined in the EPP-BCFL paper:
-- Immutable cryptographic chaining of blocks: H_block = SHA-256(index + prev_hash + timestamp + tx_root)
-- Smart Contract state replication for SecureHealthRegistry.sol
-- Dual-mode operation:
-    1. Connects to local Ethereum Ganache (JSON-RPC http://127.0.0.1:7545) when available
-    2. Maintains a native verifiable on-chain ledger with real blocks, transactions, and validator consensus
+"""In-memory ledger simulator for the SecureHealth Chain demo.
+
+This does not connect to Ganache, execute a smart contract, or implement PoS/BFT
+consensus. It creates a local hash-linked history that can demonstrate record
+integrity checks during a single server session.
 """
 
 import time
@@ -155,7 +152,10 @@ class BlockchainLedger:
             "tx_hash": tx.tx_hash,
             "block_number": mined_block.index,
             "block_hash": mined_block.hash,
-            "consensus": "PoS-BFT (Lightweight)" if not is_ganache else "Ethereum Ganache (PoA/PoW)",
+            # This class mines an in-process Python chain in either case. A Ganache
+            # JSON-RPC ping alone does not mean the transaction was sent on-chain.
+            "consensus": "In-memory demo ledger",
+            "storage_mode": "in_memory",
             "contract_address": self.contract_address,
             "is_live_ganache": is_ganache
         }
