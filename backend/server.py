@@ -37,7 +37,7 @@ except Exception as e:
     predict_risk = None
     print(f"[Warning] FL simulation engine not loaded: {e}")
 
-PORT = 5000
+PORT = int(os.environ.get("SECUREHEALTH_PORT", "5000"))
 DEMO_TAMPER_ENABLED = os.environ.get("SECUREHEALTH_ENABLE_TAMPER_DEMO", "").strip().lower() in {"1", "true", "yes"}
 
 # Demo users are hashed at startup; newly registered accounts use the same format.
