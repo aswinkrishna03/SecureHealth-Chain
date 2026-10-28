@@ -373,9 +373,12 @@
                         <h3 class="text-lg font-bold text-white">Run Local Federated Learning Simulation</h3>
                         <p class="text-xs text-slate-400">Uses the Synthea synthetic EHR ZIP from Downloads when present, splitting patients into three virtual edge nodes. Per-patient DP-SGD clips and noises gradients; CKKS encrypts updates for sample-weighted FedAvg. Model parameters are homomorphically encrypted via CKKS before transmission, and exact metrics are not DP.</p>
                     </div>
-                    <button onclick="verifyFLUpdates()" class="px-4 py-2.5 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-cyan-300 font-semibold rounded-lg text-sm">🔍 Verify FL updates</button>\n                    <button onclick="triggerFLRound()" id="btn-trigger-fl" class="px-5 py-2.5 bg-gradient-to-r from-purple-600 to-cyan-600 hover:from-purple-500 hover:to-cyan-500 text-white font-bold rounded-lg text-sm transition flex items-center gap-2">
+                    <div class="flex gap-2 flex-wrap">
+                        <button onclick="verifyFLUpdates()" class="px-4 py-2.5 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-cyan-300 font-semibold rounded-lg text-sm">🔍 Verify FL updates</button>
+                        <button onclick="triggerFLRound()" id="btn-trigger-fl" class="px-5 py-2.5 bg-gradient-to-r from-purple-600 to-cyan-600 hover:from-purple-500 hover:to-cyan-500 text-white font-bold rounded-lg text-sm transition flex items-center gap-2">
                         <span>🚀 Start FL Training Round</span>
                     </button>
+                    </div>
                 </div>
 
                 <div class="bg-slate-950 rounded-lg p-4 border border-slate-800 text-xs font-mono space-y-2 text-slate-300 max-h-56 overflow-y-auto" id="fl-log-terminal">
@@ -971,7 +974,8 @@
                 appendFLLog(`   -> Local simulation hash: ${result.latest_tx_hash || 'not available'}`, 'text-slate-400 break-all');
                 (lastRound?.node_updates || []).forEach((node) => appendFLLog(`   -> ${node.hospital}: ${node.samples} training rows; holdout ${node.local_accuracy}%`, 'text-slate-400'));
                 document.getElementById('fl-rounds-count').innerText = String(Number(document.getElementById('fl-rounds-count').innerText) + 1);
-                document.getElementById('fl-accuracy').innerText = `${result.final_accuracy}%`;\n                await fetchFLStatus();
+                document.getElementById('fl-accuracy').innerText = `${result.final_accuracy}%`;
+                await fetchFLStatus();
             } catch (err) {
                 appendFLLog(`FL execution failed: ${err.message || err}`, 'text-rose-400');
             } finally {
