@@ -100,7 +100,7 @@ export default function PatientPortal() {
                 <dl className="grid grid-cols-2 gap-x-4 gap-y-2 border-t border-slate-800 pt-3 text-xs">
                   {Object.entries(record.clinical_metrics).map(([key, value]) => (
                     <div key={key} className="min-w-0">
-                      <dt className="text-slate-500">{key.replaceAll('_', ' ')}</dt>
+                      <dt className="capitalize text-slate-500">{({ age: 'Age', resting_bp: 'Blood pressure (mm Hg)', cholesterol: 'Cholesterol (mg/dL)', heart_rate: 'Heart rate (bpm)', max_hr: 'Maximum heart rate (bpm)', blood_glucose: 'Blood glucose (mg/dL)', oxygen_saturation: 'Oxygen saturation (%)' })[key] || key.replaceAll('_', ' ')}</dt>
                       <dd className="break-words text-slate-200">{typeof value === 'object' ? JSON.stringify(value) : String(value)}</dd>
                     </div>
                   ))}
