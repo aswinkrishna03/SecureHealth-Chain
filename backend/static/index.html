@@ -128,6 +128,9 @@
             <button onclick="showTab('tab-doctor')" id="nav-doctor" class="tab-btn py-3 border-b-2 border-cyan-500 text-cyan-400 flex items-center space-x-2">
                 <span>📋 Clinical Records & Sealing</span>
             </button>
+            <button onclick="showTab('tab-patient')" id="nav-patient" class="tab-btn py-3 border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center space-x-2">
+                <span>🩺 My Health Records</span>
+            </button>
             <button onclick="showTab('tab-predict')" id="nav-predict" class="tab-btn py-3 border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center space-x-2">
                 <span>🧠 AI Disease Risk Predictor</span>
             </button>
@@ -145,6 +148,17 @@
 
     <!-- Main Container -->
     <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-1 w-full">
+
+        <!-- PATIENT PORTAL: authenticated patient's own records only -->
+        <section id="tab-patient" class="hidden space-y-6">
+            <div class="bg-slate-900 border border-slate-800 rounded-xl p-6 shadow-xl">
+                <p class="text-xs font-bold uppercase tracking-wider text-cyan-400">Patient Portal</p>
+                <h2 class="mt-2 text-2xl font-bold text-white">My Health Records</h2>
+                <p class="mt-2 text-sm text-slate-400">Only records linked to your signed-in patient account appear here. Select a record to verify its sealed integrity or open its QR code.</p>
+                <p id="patient-records-status" class="mt-4 text-sm text-slate-300" role="status">Loading your records…</p>
+            </div>
+            <div id="patient-records-container" class="grid grid-cols-1 lg:grid-cols-2 gap-4"></div>
+        </section>
 
         <!-- ========================================== -->
         <!-- TAB 1: CLINICAL RECORDS & BLOCKCHAIN SEALING -->
@@ -296,14 +310,6 @@
                         </button>
                     </div>
 
-                    <!-- Viva Examiner Tamper Demonstration Button -->
-                    <div class="pt-4 border-t border-slate-800">
-                        <span class="text-xs font-bold text-rose-400 uppercase tracking-wide block mb-1">Security & Integrity Audit:</span>
-                        <p class="text-xs text-slate-400 mb-3">Simulate an unauthorized clinical modification to evaluate blockchain tamper-detection:</p>
-                        <button onclick="triggerTamperSimulation()" class="w-full py-2 bg-rose-950 hover:bg-rose-900 text-rose-300 border border-rose-800 font-semibold rounded-lg text-xs transition flex items-center justify-center gap-2">
-                            <span>⚠️ Simulate Record Tampering (Integrity Test)</span>
-                        </button>
-                    </div>
                 </div>
 
                 <!-- Verification Output Results -->
@@ -487,12 +493,12 @@
         let currentUser = null;
         const ROLE_TABS = {
             doctor: ['tab-doctor', 'tab-predict', 'tab-verify'],
-            patient: ['tab-verify'],
-            admin: ['tab-predict', 'tab-verify', 'tab-fl', 'tab-blockchain']
+            patient: ['tab-patient'],
+            admin: ['tab-fl', 'tab-blockchain']
         };
         const ROLE_DEFAULT_TAB = {
             doctor: 'tab-doctor',
-            patient: 'tab-verify',
+            patient: 'tab-patient',
             admin: 'tab-fl'
         };
 
@@ -582,8 +588,7 @@
                 sessionToken = data.token;
                 sessionStorage.setItem('securehealth_token', sessionToken);
                 applyRoleAccess(data.user);
-                fetchRecords();
-                if (data.user.role === 'admin') fetchBlocks();
+                loadRoleDashboard(data.user);
             } catch (error) {
                 errorBox.textContent = error.message;
                 errorBox.classList.remove('hidden');
@@ -600,8 +605,7 @@
                 if (!response.ok) throw new Error('Session expired');
                 const data = await response.json();
                 applyRoleAccess(data.user);
-                fetchRecords();
-                if (data.user.role === 'admin') fetchBlocks();
+                loadRoleDashboard(data.user);
             } catch {
                 sessionToken = '';
                 currentUser = null;
@@ -623,7 +627,7 @@
             const allowed = ROLE_TABS[currentUser?.role] || [];
             if (!currentUser || !allowed.includes(tabId)) return false;
 
-            ['tab-doctor', 'tab-predict', 'tab-verify', 'tab-fl', 'tab-blockchain'].forEach(id => {
+            ['tab-doctor', 'tab-patient', 'tab-predict', 'tab-verify', 'tab-fl', 'tab-blockchain'].forEach(id => {
                 const panel = document.getElementById(id);
                 panel.classList.add('hidden');
                 panel.style.display = 'none';
@@ -638,6 +642,7 @@
             });
             const activeNav = {
                 'tab-doctor': 'nav-doctor',
+                'tab-patient': 'nav-patient',
                 'tab-predict': 'nav-predict',
                 'tab-verify': 'nav-verify',
                 'tab-fl': 'nav-fl',
@@ -646,6 +651,8 @@
             document.getElementById(activeNav).classList.add('border-cyan-500', 'text-cyan-400');
             document.getElementById(activeNav).classList.remove('border-transparent', 'text-slate-400');
 
+            if (tabId === 'tab-patient') fetchPatientRecords();
+            if (tabId === 'tab-fl') fetchFLStatus();
             if (tabId === 'tab-blockchain') fetchBlocks();
             return true;
         }
@@ -654,7 +661,7 @@
             if (!user || !ROLE_TABS[user.role]) throw new Error('The signed-in account has no valid portal role.');
             currentUser = user;
             const allowed = new Set(ROLE_TABS[user.role]);
-            ['tab-doctor', 'tab-predict', 'tab-verify', 'tab-fl', 'tab-blockchain'].forEach(tabId => {
+            ['tab-doctor', 'tab-patient', 'tab-predict', 'tab-verify', 'tab-fl', 'tab-blockchain'].forEach(tabId => {
                 const isAllowed = allowed.has(tabId);
                 const panel = document.getElementById(tabId);
                 const nav = document.getElementById('nav-' + tabId.slice(4));
@@ -669,6 +676,12 @@
             showTab(ROLE_DEFAULT_TAB[user.role]);
         }
 
+        function loadRoleDashboard(user) {
+            if (user.role === 'doctor') fetchRecords();
+            if (user.role === 'patient') fetchPatientRecords();
+            if (user.role === 'admin') fetchFLStatus();
+        }
+
         async function signOut() {
             try { await apiFetch(`${API_BASE}/api/auth/logout`, { method: 'POST' }); } catch {}
             sessionToken = '';
@@ -678,6 +691,95 @@
         }
 
         // Fetch and display EHR records
+        async function fetchPatientRecords() {
+            const status = document.getElementById('patient-records-status');
+            const container = document.getElementById('patient-records-container');
+            status.textContent = 'Loading your private records…';
+            container.replaceChildren();
+            try {
+                const response = await apiFetch(`${API_BASE}/api/ehr/list`);
+                const data = await response.json();
+                if (!response.ok) throw new Error(data.message || 'Could not load your records');
+                const records = Array.isArray(data.records) ? data.records : [];
+                status.textContent = records.length
+                    ? `${records.length} record(s) are linked to your account.`
+                    : 'No records are linked to your account yet. Your doctor can add a record after your visit.';
+
+                records.forEach(record => {
+                    const card = document.createElement('article');
+                    card.className = 'bg-slate-900 border border-slate-800 rounded-xl p-5 shadow space-y-3';
+
+                    const title = document.createElement('h3');
+                    title.className = 'text-lg font-bold text-white';
+                    title.textContent = record.diagnosis || 'Clinical record';
+                    card.appendChild(title);
+
+                    const meta = document.createElement('p');
+                    meta.className = 'text-xs text-slate-400';
+                    meta.textContent = `Record ${record.record_uuid} · ${record.created_at || 'Date unavailable'}`;
+                    card.appendChild(meta);
+
+                    const clinician = document.createElement('p');
+                    clinician.className = 'text-sm text-slate-300';
+                    clinician.textContent = `Doctor: ${record.doctor_name || 'Not specified'} · Hospital: ${record.hospital_name || 'Not specified'}`;
+                    card.appendChild(clinician);
+
+                    const metrics = document.createElement('p');
+                    metrics.className = 'text-xs text-slate-400 break-words';
+                    metrics.textContent = 'Clinical details: ' + JSON.stringify(record.clinical_metrics || {});
+                    card.appendChild(metrics);
+
+                    const result = document.createElement('p');
+                    result.className = 'text-sm text-slate-300';
+                    result.setAttribute('role', 'status');
+                    card.appendChild(result);
+
+                    const actions = document.createElement('div');
+                    actions.className = 'flex flex-wrap gap-2';
+                    const verifyButton = document.createElement('button');
+                    verifyButton.className = 'px-3 py-2 rounded-lg bg-cyan-700 hover:bg-cyan-600 text-sm font-semibold text-white';
+                    verifyButton.textContent = 'Verify my record';
+                    verifyButton.addEventListener('click', () => verifyPatientRecord(record.record_uuid, result));
+                    actions.appendChild(verifyButton);
+
+                    if (record.qr_code_url) {
+                        const qrButton = document.createElement('button');
+                        qrButton.className = 'px-3 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-sm text-cyan-300 border border-slate-700';
+                        qrButton.textContent = 'View QR code';
+                        qrButton.addEventListener('click', () => viewQRCode(record.qr_code_url, record.record_uuid));
+                        actions.appendChild(qrButton);
+                    }
+                    card.appendChild(actions);
+                    container.appendChild(card);
+                });
+            } catch (error) {
+                status.textContent = error.message || 'Could not load your records.';
+                container.replaceChildren();
+            }
+        }
+
+        async function verifyPatientRecord(recordUuid, resultElement) {
+            resultElement.textContent = 'Checking the sealed record…';
+            try {
+                const response = await apiFetch(`${API_BASE}/api/verify/record`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ record_uuid: recordUuid })
+                });
+                const data = await response.json();
+                if (!response.ok || !data.success) throw new Error(data.message || 'Verification was denied');
+                resultElement.textContent = data.is_authentic
+                    ? 'Verified: record contents match the sealed hash.'
+                    : 'Alert: record contents do not match the sealed hash.';
+                resultElement.className = data.is_authentic
+                    ? 'text-sm text-emerald-400'
+                    : 'text-sm text-rose-400';
+            } catch (error) {
+                resultElement.textContent = error.message || 'Verification failed.';
+                resultElement.className = 'text-sm text-rose-400';
+            }
+        }
+
         async function fetchRecords() {
             try {
                 const res = await apiFetch(`${API_BASE}/api/ehr/list`);
@@ -803,25 +905,6 @@
             verifyRecordAuthenticity(uuid);
         }
 
-        // Trigger Malicious Tamper for Viva Demo
-        async function triggerTamperSimulation() {
-            const uuid = document.getElementById('verify-uuid').value;
-            try {
-                const res = await apiFetch(`${API_BASE}/api/demo/tamper-record`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ record_uuid: uuid })
-                });
-                const data = await res.json();
-                alert(data.message);
-                // Immediately verify to show the red alarm!
-                verifyRecordAuthenticity(uuid);
-                fetchRecords();
-            } catch (err) {
-                alert("Tamper simulation failed: " + err);
-            }
-        }
-
         // Trigger Federated Learning Round
         async function triggerFLRound() {
             const btn = document.getElementById('btn-trigger-fl');
@@ -895,14 +978,30 @@
             }
         }
 
-        function viewQRCode(qrUrl, uuid) {
-            document.getElementById('qr-modal-img').src = qrUrl;
-            document.getElementById('qr-modal-uuid').innerText = uuid;
-            document.getElementById('qr-modal').classList.remove('hidden');
+        let qrObjectUrl = null;
+
+        async function viewQRCode(qrUrl, uuid) {
+            try {
+                const response = await apiFetch(qrUrl);
+                if (!response.ok) throw new Error('QR code access is not allowed for this account');
+                const blob = await response.blob();
+                if (qrObjectUrl) URL.revokeObjectURL(qrObjectUrl);
+                qrObjectUrl = URL.createObjectURL(blob);
+                document.getElementById('qr-modal-img').src = qrObjectUrl;
+                document.getElementById('qr-modal-uuid').innerText = uuid;
+                document.getElementById('qr-modal').classList.remove('hidden');
+            } catch (error) {
+                alert(error.message || 'Could not load QR code');
+            }
         }
 
         function closeQRModal() {
             document.getElementById('qr-modal').classList.add('hidden');
+            document.getElementById('qr-modal-img').removeAttribute('src');
+            if (qrObjectUrl) {
+                URL.revokeObjectURL(qrObjectUrl);
+                qrObjectUrl = null;
+            }
         }
 
         // Fetch and render Blockchain Blocks
