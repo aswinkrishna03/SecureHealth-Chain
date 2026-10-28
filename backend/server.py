@@ -344,11 +344,46 @@ class SecureHealthHandler(http.server.BaseHTTPRequestHandler):
             self.send_json(200, {"success": True, "patients": patients})
             return
 
-        # API: FL Status
+        # API: FL Status and administrator-only update verification
         if path == "/api/fl/status":
             if not self.require_role("admin"):
                 return
             self.send_json(200, {"success": True, "fl_state": FL_STATE})
+            return
+
+        if path == "/api/fl/verify":
+            if not self.require_role("admin"):
+                return
+            reports = []
+            for round_data in FL_STATE["history"]:
+                round_number = round_data["round"]
+                expected = {
+                    update["hospital"]: update["update_hash"]
+                    for update in round_data.get("node_updates", [])
+                }
+                recorded = {
+                    update["node"]: update["model_hash"]
+                    for update in blockchain_ledger.fl_round_updates.get(round_number, [])
+                }
+                node_updates_match = bool(expected) and all(recorded.get(node) == model_hash for node, model_hash in expected.items())
+                global_model_match = (
+                    blockchain_ledger.global_models.get(round_number)
+                    == round_data.get("global_model_hash")
+                )
+                reports.append({
+                    "round": round_number,
+                    "verified": node_updates_match and global_model_match,
+                    "node_updates_match": node_updates_match,
+                    "global_model_match": global_model_match,
+                    "node_count": len(expected),
+                    "global_model_hash": round_data.get("global_model_hash"),
+                })
+            self.send_json(200, {
+                "success": True,
+                "verified_rounds": sum(1 for report in reports if report["verified"]),
+                "total_rounds": len(reports),
+                "rounds": reports,
+            })
             return
 
         # API: Blockchain Blocks & Ledger State
@@ -624,14 +659,33 @@ class SecureHealthHandler(http.server.BaseHTTPRequestHandler):
                     print(f"[FL simulation error] {error}")
                     self.send_json(500, {"success": False, "message": "FL simulation failed; no result was recorded"})
                     return
-                FL_STATE["total_rounds"] += rounds
+                round_offset = FL_STATE["total_rounds"]
+                for round_data in results["history"]:
+                    global_round = round_offset + int(round_data["round"])
+                    round_data["round"] = global_round
+
+                    # Commit only DP-perturbed model hashes from virtual hospital edge nodes.
+                    for update in round_data.get("node_updates", []):
+                        receipt = blockchain_ledger.submit_fl_model_update(
+                            global_round, update["update_hash"], update["hospital"]
+                        )
+                        update["ledger_tx_hash"] = receipt["tx_hash"]
+                        update["ledger_block"] = receipt["block_number"]
+
+                    receipt = blockchain_ledger.publish_global_fl_model(
+                        global_round, round_data["global_model_hash"]
+                    )
+                    round_data["global_ledger_tx_hash"] = receipt["tx_hash"]
+                    round_data["global_ledger_block"] = receipt["block_number"]
+                    FL_STATE["history"].append(round_data)
+
+                FL_STATE["total_rounds"] = round_offset + rounds
                 FL_STATE["current_accuracy"] = results["final_accuracy"]
                 FL_STATE["last_global_hash"] = results["final_global_hash"]
-                FL_STATE["last_tx_hash"] = results["latest_tx_hash"]
-                FL_STATE["history"].extend(results["history"])
-
-                # Append the simulated global model hash to the local demo ledger.
-                blockchain_ledger.publish_global_fl_model(FL_STATE["total_rounds"], results["final_global_hash"])
+                FL_STATE["last_tx_hash"] = (
+                    results["history"][-1].get("global_ledger_tx_hash")
+                    if results["history"] else results["latest_tx_hash"]
+                )
 
                 self.send_json(200, {"success": True, "results": results})
             else:
