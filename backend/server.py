@@ -38,6 +38,7 @@ except Exception as e:
     print(f"[Warning] FL simulation engine not loaded: {e}")
 
 PORT = 5000
+DEMO_TAMPER_ENABLED = os.environ.get("SECUREHEALTH_ENABLE_TAMPER_DEMO", "").strip().lower() in {"1", "true", "yes"}
 
 # Demo users are hashed at startup; newly registered accounts use the same format.
 def hash_password(password: str, salt: bytes = None) -> str:
@@ -361,7 +362,10 @@ class SecureHealthHandler(http.server.BaseHTTPRequestHandler):
                     "global_model_accuracy": f"{FL_STATE['current_accuracy']}%",
                     "blockchain_network": "Local in-memory demo ledger",
                     "contract_status": "NOT_CONNECTED",
-                    "audit_logs": AUDIT_LOGS
+                    "audit_logs": [
+                        {key: entry.get(key) for key in ("id", "action", "status", "timestamp")}
+                        for entry in AUDIT_LOGS[-50:]
+                    ]
                 }
             })
             return
@@ -567,6 +571,9 @@ class SecureHealthHandler(http.server.BaseHTTPRequestHandler):
 
         # DEMO TAMPERING ENDPOINT FOR VIVA EXAMINERS
         if path == "/api/demo/tamper-record":
+            if not DEMO_TAMPER_ENABLED:
+                self.send_json(404, {"success": False, "message": "Tamper demonstration is disabled"})
+                return
             if not self.require_role("admin"):
                 return
             record_uuid = body.get("record_uuid")
