@@ -8,9 +8,8 @@ import { apiFetch } from './api';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState('doctor');
-  const [session, setSession] = useState(() => {
-    try { return JSON.parse(sessionStorage.getItem('securehealth-user')); } catch { return null; }
-  });
+  const [session, setSession] = useState(null);
+  const [restoringSession, setRestoringSession] = useState(true);
   const [email, setEmail] = useState('doctor@securehealth.org');
   const [password, setPassword] = useState('doctor');
   const [error, setError] = useState('');
@@ -30,14 +29,33 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    if (!session) return;
-    apiFetch('/api/auth/me').then((response) => {
-      if (!response.ok) {
-        sessionStorage.removeItem('securehealth-token');
-        sessionStorage.removeItem('securehealth-user');
-        setSession(null);
+    if (!sessionStorage.getItem('securehealth-token')) {
+      setRestoringSession(false);
+      return undefined;
+    }
+    let active = true;
+
+    apiFetch('/api/auth/me').then(async (response) => {
+      if (!response.ok) throw new Error('Session expired');
+      const data = await response.json();
+      const user = data.user;
+      if (!data.success || !user || !['admin', 'doctor', 'patient'].includes(user.role)) {
+        throw new Error('Invalid account session');
       }
-    }).catch(() => {});
+      if (!active) return;
+      // Trust the server's role and validate it before rendering any role dashboard.
+      sessionStorage.setItem('securehealth-user', JSON.stringify(user));
+      setSession(user);
+    }).catch(() => {
+      if (!active) return;
+      sessionStorage.removeItem('securehealth-token');
+      sessionStorage.removeItem('securehealth-user');
+      setSession(null);
+    }).finally(() => {
+      if (active) setRestoringSession(false);
+    });
+
+    return () => { active = false; };
   }, []);
 
   useEffect(() => {
@@ -89,6 +107,12 @@ export default function App() {
     sessionStorage.removeItem('securehealth-user');
     setSession(null);
   };
+
+  if (restoringSession) return (
+    <div className="min-h-screen bg-slate-950 text-slate-100 flex items-center justify-center">
+      <p className="text-sm text-slate-400">Checking your account session…</p>
+    </div>
+  );
 
   if (!session) return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex items-center justify-center p-4">
