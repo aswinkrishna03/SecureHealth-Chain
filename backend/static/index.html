@@ -373,7 +373,7 @@
                         <h3 class="text-lg font-bold text-white">Run Local Federated Learning Simulation</h3>
                         <p class="text-xs text-slate-400">Uses the Synthea synthetic EHR ZIP from Downloads when present, splitting patients into three virtual edge nodes. Per-patient DP-SGD clips and noises gradients; CKKS encrypts updates for sample-weighted FedAvg. Model parameters are homomorphically encrypted via CKKS before transmission, and exact metrics are not DP.</p>
                     </div>
-                    <button onclick="triggerFLRound()" id="btn-trigger-fl" class="px-5 py-2.5 bg-gradient-to-r from-purple-600 to-cyan-600 hover:from-purple-500 hover:to-cyan-500 text-white font-bold rounded-lg text-sm transition flex items-center gap-2">
+                    <button onclick="verifyFLUpdates()" class="px-4 py-2.5 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-cyan-300 font-semibold rounded-lg text-sm">🔍 Verify FL updates</button>\n                    <button onclick="triggerFLRound()" id="btn-trigger-fl" class="px-5 py-2.5 bg-gradient-to-r from-purple-600 to-cyan-600 hover:from-purple-500 hover:to-cyan-500 text-white font-bold rounded-lg text-sm transition flex items-center gap-2">
                         <span>🚀 Start FL Training Round</span>
                     </button>
                 </div>
@@ -906,6 +906,39 @@
         }
 
         // Trigger Federated Learning Round
+        async function fetchFLStatus() {
+            try {
+                const response = await apiFetch(`${API_BASE}/api/fl/status`);
+                const data = await response.json();
+                if (!response.ok || !data.success) throw new Error(data.message || 'Could not load FL status');
+                const state = data.fl_state || {};
+                document.getElementById('fl-rounds-count').textContent = state.total_rounds ?? 0;
+                document.getElementById('fl-accuracy').textContent = state.current_accuracy == null ? '—' : `${state.current_accuracy}%`;
+                const terminal = document.getElementById('fl-log-terminal');
+                terminal.replaceChildren();
+                (state.history || []).slice().reverse().slice(0, 3).forEach(round => {
+                    appendFLLog(`Round ${round.round} · global model hash: ${round.global_model_hash || '—'}`, 'text-cyan-300');
+                    (round.node_updates || []).forEach(node => appendFLLog(`  ${node.hospital} · update hash: ${node.update_hash || '—'}`, 'text-slate-400'));
+                });
+                if (!state.history?.length) appendFLLog('[*] No FL rounds yet. Start a round to create model updates.', 'text-cyan-400');
+            } catch (error) {
+                appendFLLog(`Could not load FL status: ${error.message || error}`, 'text-rose-400');
+            }
+        }
+
+        async function verifyFLUpdates() {
+            appendFLLog('[*] Checking submitted update hashes against the local demo ledger…', 'text-amber-400');
+            try {
+                const response = await apiFetch(`${API_BASE}/api/fl/verify`);
+                const data = await response.json();
+                if (!response.ok || !data.success) throw new Error(data.message || 'Verification failed');
+                appendFLLog(`Ledger verification: ${data.verified_rounds}/${data.total_rounds} rounds verified.`, data.verified_rounds === data.total_rounds ? 'text-emerald-400 font-bold' : 'text-amber-400');
+                (data.rounds || []).forEach(round => appendFLLog(`Round ${round.round}: nodes ${round.node_updates_match ? 'match' : 'MISMATCH'}, global model ${round.global_model_match ? 'matches' : 'MISMATCH'}`, round.verified ? 'text-emerald-400' : 'text-rose-400'));
+            } catch (error) {
+                appendFLLog(`FL verification failed: ${error.message || error}`, 'text-rose-400');
+            }
+        }
+
         async function triggerFLRound() {
             const btn = document.getElementById('btn-trigger-fl');
             btn.disabled = true;
@@ -938,7 +971,7 @@
                 appendFLLog(`   -> Local simulation hash: ${result.latest_tx_hash || 'not available'}`, 'text-slate-400 break-all');
                 (lastRound?.node_updates || []).forEach((node) => appendFLLog(`   -> ${node.hospital}: ${node.samples} training rows; holdout ${node.local_accuracy}%`, 'text-slate-400'));
                 document.getElementById('fl-rounds-count').innerText = String(Number(document.getElementById('fl-rounds-count').innerText) + 1);
-                document.getElementById('fl-accuracy').innerText = `${result.final_accuracy}%`;
+                document.getElementById('fl-accuracy').innerText = `${result.final_accuracy}%`;\n                await fetchFLStatus();
             } catch (err) {
                 appendFLLog(`FL execution failed: ${err.message || err}`, 'text-rose-400');
             } finally {
