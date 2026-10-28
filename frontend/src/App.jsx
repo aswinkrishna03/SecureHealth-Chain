@@ -30,14 +30,28 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    if (!session) return;
-    apiFetch('/api/auth/me').then((response) => {
-      if (!response.ok) {
-        sessionStorage.removeItem('securehealth-token');
-        sessionStorage.removeItem('securehealth-user');
-        setSession(null);
+    if (!session) return undefined;
+    let active = true;
+
+    apiFetch('/api/auth/me').then(async (response) => {
+      if (!response.ok) throw new Error('Session expired');
+      const data = await response.json();
+      const user = data.user;
+      if (!data.success || !user || !['admin', 'doctor', 'patient'].includes(user.role)) {
+        throw new Error('Invalid account session');
       }
-    }).catch(() => {});
+      if (!active) return;
+      // Trust the server's current session role, never a browser-edited cached role.
+      sessionStorage.setItem('securehealth-user', JSON.stringify(user));
+      setSession(user);
+    }).catch(() => {
+      if (!active) return;
+      sessionStorage.removeItem('securehealth-token');
+      sessionStorage.removeItem('securehealth-user');
+      setSession(null);
+    });
+
+    return () => { active = false; };
   }, []);
 
   useEffect(() => {
