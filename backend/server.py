@@ -283,7 +283,24 @@ class SecureHealthHandler(http.server.BaseHTTPRequestHandler):
 
         # Serve QR Codes
         if path.startswith("/static/qrcodes/"):
+            viewer = self.require_role("doctor", "patient")
+            if not viewer:
+                return
             file_name = os.path.basename(path)
+            record_uuid = os.path.splitext(file_name)[0]
+            record = EHR_RECORDS_DB.get(record_uuid)
+            if not record:
+                self.send_error(404, "QR record not found")
+                return
+            if viewer["role"] == "patient" and str(record["patient_id"]) != str(viewer["id"]):
+                self.send_json(403, {"success": False, "message": "Patients can only open QR codes for their own records"})
+                return
+            if viewer["role"] == "doctor" and record.get("hospital_name") != viewer.get("hospital_name"):
+                self.send_json(403, {"success": False, "message": "You can only open QR codes from your hospital"})
+                return
+            if not file_name.endswith((".png", ".svg")):
+                self.send_error(404, "QR file not found")
+                return
             file_path = os.path.join(os.path.dirname(__file__), "static", "qrcodes", file_name)
             mime = "image/svg+xml" if file_name.endswith(".svg") else "image/png"
             self.serve_file(file_path, mime)
