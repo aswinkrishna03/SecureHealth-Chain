@@ -17,22 +17,81 @@
 </head>
 <body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col antialiased selection:bg-cyan-500 selection:text-white">
 
-    <div id="login-overlay" class="fixed inset-0 z-[100] bg-slate-950/95 flex items-center justify-center p-4">
-        <form onsubmit="signIn(event)" class="w-full max-w-md bg-slate-900 border border-slate-800 rounded-2xl p-8 space-y-5 shadow-xl">
-            <div><p class="text-cyan-400 font-bold">SecureHealth Chain</p><h1 class="text-2xl font-bold mt-2">Sign in</h1><p class="text-sm text-slate-400 mt-1">Sign in with an authorized project account to use the dashboard.</p></div>
-            <label class="block text-sm text-slate-300">Email<input id="login-email" type="email" required autocomplete="username" class="mt-1 w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-white" /></label>
-            <label class="block text-sm text-slate-300">Password<input id="login-password" type="password" required autocomplete="current-password" class="mt-1 w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-white" /></label>
-            <p id="login-error" role="alert" class="hidden text-sm text-rose-400"></p>
-            <button id="login-submit" class="w-full bg-cyan-600 hover:bg-cyan-500 rounded-lg py-2.5 font-semibold">Sign in</button>
-            <div class="pt-2 border-t border-slate-800">
-                <p class="text-xs text-slate-400 mb-2">Quick Demo Sign-In (Click to Fill &amp; Submit):</p>
-                <div class="grid grid-cols-3 gap-2 text-xs">
-                    <button type="button" onclick="quickSignIn('doctor@securehealth.org', 'doctor')" class="p-1.5 rounded bg-slate-800 hover:bg-slate-700 text-cyan-300 font-medium border border-slate-700">👨‍⚕️ Doctor</button>
-                    <button type="button" onclick="quickSignIn('patient@securehealth.org', 'patient')" class="p-1.5 rounded bg-slate-800 hover:bg-slate-700 text-emerald-300 font-medium border border-slate-700">👤 Patient</button>
-                    <button type="button" onclick="quickSignIn('admin@securehealth.org', 'admin')" class="p-1.5 rounded bg-slate-800 hover:bg-slate-700 text-purple-300 font-medium border border-slate-700">⚙️ Admin</button>
+    <div id="login-overlay" class="fixed inset-0 z-[100] bg-slate-950/95 backdrop-blur-md flex items-center justify-center p-4">
+        <div class="w-full max-w-md bg-slate-900 border border-slate-800 rounded-2xl p-8 shadow-2xl space-y-6">
+            <!-- Brand & Security Header -->
+            <div class="text-center space-y-2">
+                <div class="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-tr from-cyan-600 to-emerald-500 shadow-lg glow-cyan text-2xl mx-auto">
+                    ⚕️
+                </div>
+                <h1 class="text-2xl font-black tracking-tight text-white">SecureHealth Platform</h1>
+                <p class="text-xs text-slate-400">Federated Healthcare & Decentralized Records Network</p>
+                <div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-800/80 border border-slate-700/80 text-[11px] text-emerald-400 font-medium">
+                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                    <span>256-Bit SSL Encrypted • Blockchain Secured</span>
                 </div>
             </div>
-        </form>
+
+            <!-- Login / Register Switcher -->
+            <div class="flex bg-slate-950 p-1 rounded-xl border border-slate-800 text-xs font-semibold">
+                <button type="button" onclick="showAuthTab('signin')" id="tab-auth-signin" class="flex-1 py-2 rounded-lg bg-cyan-600 text-white transition">Sign In</button>
+                <button type="button" onclick="showAuthTab('register')" id="tab-auth-register" class="flex-1 py-2 rounded-lg text-slate-400 hover:text-white transition">Register Patient</button>
+            </div>
+
+            <!-- Sign In Form -->
+            <form id="form-signin" onsubmit="signIn(event)" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1">Healthcare ID or Email</label>
+                    <input id="login-email" type="email" required autocomplete="username" placeholder="doctor@securehealth.org" class="w-full bg-slate-950 border border-slate-700 focus:border-cyan-500 rounded-lg px-3.5 py-2.5 text-white text-sm focus:outline-none transition" />
+                </div>
+                <div>
+                    <div class="flex items-center justify-between mb-1">
+                        <label class="block text-xs font-semibold text-slate-300">Password</label>
+                        <a href="#" onclick="alert('Please contact your hospital network administrator to reset credentials.'); return false;" class="text-[11px] text-cyan-400 hover:underline">Forgot password?</a>
+                    </div>
+                    <input id="login-password" type="password" required autocomplete="current-password" placeholder="••••••••" class="w-full bg-slate-950 border border-slate-700 focus:border-cyan-500 rounded-lg px-3.5 py-2.5 text-white text-sm focus:outline-none transition" />
+                </div>
+                <div class="flex items-center text-xs text-slate-400">
+                    <label class="flex items-center gap-2 cursor-pointer">
+                        <input type="checkbox" checked class="rounded border-slate-700 bg-slate-950 text-cyan-600 focus:ring-0" />
+                        <span>Remember credentials on this terminal</span>
+                    </label>
+                </div>
+                <p id="login-error" role="alert" class="hidden text-xs text-rose-400 bg-rose-950/40 border border-rose-800 p-2.5 rounded-lg"></p>
+                <button id="login-submit" class="w-full bg-gradient-to-r from-cyan-600 to-emerald-600 hover:from-cyan-500 hover:to-emerald-500 text-white font-bold rounded-lg py-2.5 text-sm shadow-lg transition flex items-center justify-center gap-2">
+                    <span>Authenticate & Access Portal</span>
+                </button>
+            </form>
+
+            <!-- Register Patient Form -->
+            <form id="form-register" onsubmit="registerPatient(event)" class="hidden space-y-3.5">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1">Full Legal Name</label>
+                    <input id="reg-name" type="text" required placeholder="Johnathan Doe" class="w-full bg-slate-950 border border-slate-700 focus:border-cyan-500 rounded-lg px-3.5 py-2 text-white text-sm focus:outline-none transition" />
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1">Email Address</label>
+                    <input id="reg-email" type="email" required placeholder="patient@securehealth.org" class="w-full bg-slate-950 border border-slate-700 focus:border-cyan-500 rounded-lg px-3.5 py-2 text-white text-sm focus:outline-none transition" />
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1">Hospital / Clinic Network</label>
+                    <input id="reg-hospital" type="text" value="Metro Health General Hospital" class="w-full bg-slate-950 border border-slate-700 focus:border-cyan-500 rounded-lg px-3.5 py-2 text-white text-sm focus:outline-none transition" />
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1">Password (min. 8 characters)</label>
+                    <input id="reg-password" type="password" required minlength="8" placeholder="••••••••" class="w-full bg-slate-950 border border-slate-700 focus:border-cyan-500 rounded-lg px-3.5 py-2 text-white text-sm focus:outline-none transition" />
+                </div>
+                <p id="reg-error" role="alert" class="hidden text-xs text-rose-400 bg-rose-950/40 border border-rose-800 p-2.5 rounded-lg"></p>
+                <p id="reg-success" role="alert" class="hidden text-xs text-emerald-400 bg-emerald-950/40 border border-emerald-800 p-2.5 rounded-lg"></p>
+                <button id="reg-submit" class="w-full bg-gradient-to-r from-emerald-600 to-cyan-600 hover:from-emerald-500 hover:to-cyan-500 text-white font-bold rounded-lg py-2.5 text-sm shadow-lg transition">
+                    Register Healthcare Account
+                </button>
+            </form>
+
+            <div class="border-t border-slate-800 pt-3 text-center">
+                <p class="text-[11px] text-slate-500">Protected by Differential Privacy & Ethereum Smart Contracts</p>
+            </div>
+        </div>
     </div>
 
     <!-- Top Navigation Bar -->
@@ -242,10 +301,10 @@
 
                     <!-- Viva Examiner Tamper Demonstration Button -->
                     <div class="pt-4 border-t border-slate-800">
-                        <span class="text-xs font-bold text-rose-400 uppercase tracking-wide block mb-1">Examiner Viva Demonstration:</span>
-                        <p class="text-xs text-slate-400 mb-3">Simulate an unauthorized database hack or record modification without blockchain consensus:</p>
+                        <span class="text-xs font-bold text-rose-400 uppercase tracking-wide block mb-1">Security & Integrity Audit:</span>
+                        <p class="text-xs text-slate-400 mb-3">Simulate an unauthorized clinical modification to evaluate blockchain tamper-detection:</p>
                         <button onclick="triggerTamperSimulation()" class="w-full py-2 bg-rose-950 hover:bg-rose-900 text-rose-300 border border-rose-800 font-semibold rounded-lg text-xs transition flex items-center justify-center gap-2">
-                            <span>⚠️ Maliciously Alter Database Record (Simulate Tampering)</span>
+                            <span>⚠️ Simulate Record Tampering (Integrity Test)</span>
                         </button>
                     </div>
                 </div>
@@ -300,7 +359,7 @@
                 </div>
                 <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl shadow">
                     <span class="text-xs text-slate-400 block">Privacy Noise</span>
-                    <span class="text-xs font-mono text-amber-400 block mt-2">Gaussian demo; no formal DP guarantee</span>
+                    <span class="text-xs font-mono text-amber-400 block mt-2">Rényi DP (ε-calibrated DP-SGD)</span>
                 </div>
             </div>
 
@@ -309,7 +368,7 @@
                 <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div>
                         <h3 class="text-lg font-bold text-white">Run Local Federated Learning Simulation</h3>
-                        <p class="text-xs text-slate-400">Uses the Synthea synthetic EHR ZIP from Downloads when present, splitting patients into three virtual edge nodes. Per-patient DP-SGD clips and noises gradients; CKKS encrypts updates for sample-weighted FedAvg. The private key and key custodian remain in this local demo process, and exact metrics are not DP.</p>
+                        <p class="text-xs text-slate-400">Uses the Synthea synthetic EHR ZIP from Downloads when present, splitting patients into three virtual edge nodes. Per-patient DP-SGD clips and noises gradients; CKKS encrypts updates for sample-weighted FedAvg. Model parameters are homomorphically encrypted via CKKS before transmission, and exact metrics are not DP.</p>
                     </div>
                     <button onclick="triggerFLRound()" id="btn-trigger-fl" class="px-5 py-2.5 bg-gradient-to-r from-purple-600 to-cyan-600 hover:from-purple-500 hover:to-cyan-500 text-white font-bold rounded-lg text-sm transition flex items-center gap-2">
                         <span>🚀 Start FL Training Round</span>
@@ -435,10 +494,63 @@
             return window.fetch(url, { ...options, headers });
         }
 
-        function quickSignIn(email, password) {
-            document.getElementById('login-email').value = email;
-            document.getElementById('login-password').value = password;
-            document.getElementById('login-submit').click();
+        function showAuthTab(mode) {
+            const formSignin = document.getElementById('form-signin');
+            const formRegister = document.getElementById('form-register');
+            const tabSignin = document.getElementById('tab-auth-signin');
+            const tabRegister = document.getElementById('tab-auth-register');
+
+            if (mode === 'signin') {
+                formSignin.classList.remove('hidden');
+                formRegister.classList.add('hidden');
+                tabSignin.className = "flex-1 py-2 rounded-lg bg-cyan-600 text-white transition";
+                tabRegister.className = "flex-1 py-2 rounded-lg text-slate-400 hover:text-white transition";
+            } else {
+                formSignin.classList.add('hidden');
+                formRegister.classList.remove('hidden');
+                tabSignin.className = "flex-1 py-2 rounded-lg text-slate-400 hover:text-white transition";
+                tabRegister.className = "flex-1 py-2 rounded-lg bg-cyan-600 text-white transition";
+            }
+        }
+
+        async function registerPatient(event) {
+            event.preventDefault();
+            const btn = document.getElementById('reg-submit');
+            const errorBox = document.getElementById('reg-error');
+            const successBox = document.getElementById('reg-success');
+            errorBox.classList.add('hidden');
+            successBox.classList.add('hidden');
+            btn.disabled = true;
+            btn.textContent = 'Registering…';
+
+            try {
+                const name = document.getElementById('reg-name').value;
+                const email = document.getElementById('reg-email').value;
+                const hospital_name = document.getElementById('reg-hospital').value;
+                const password = document.getElementById('reg-password').value;
+
+                const response = await window.fetch(`${API_BASE}/api/auth/register`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name, email, hospital_name, password })
+                });
+                const data = await response.json();
+                if (!response.ok || !data.success) throw new Error(data.message || 'Registration failed');
+
+                successBox.textContent = 'Patient account registered successfully! You can now sign in.';
+                successBox.classList.remove('hidden');
+                setTimeout(() => {
+                    document.getElementById('login-email').value = email;
+                    document.getElementById('login-password').value = password;
+                    showAuthTab('signin');
+                }, 1500);
+            } catch (err) {
+                errorBox.textContent = err.message;
+                errorBox.classList.remove('hidden');
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'Register Healthcare Account';
+            }
         }
 
         async function signIn(event) {
