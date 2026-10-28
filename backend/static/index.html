@@ -624,9 +624,13 @@
             if (!currentUser || !allowed.includes(tabId)) return false;
 
             ['tab-doctor', 'tab-predict', 'tab-verify', 'tab-fl', 'tab-blockchain'].forEach(id => {
-                document.getElementById(id).classList.add('hidden');
+                const panel = document.getElementById(id);
+                panel.classList.add('hidden');
+                panel.style.display = 'none';
             });
-            document.getElementById(tabId).classList.remove('hidden');
+            const activePanel = document.getElementById(tabId);
+            activePanel.classList.remove('hidden');
+            activePanel.style.display = '';
 
             document.querySelectorAll('.tab-btn').forEach(btn => {
                 btn.classList.remove('border-cyan-500', 'text-cyan-400');
@@ -651,8 +655,14 @@
             currentUser = user;
             const allowed = new Set(ROLE_TABS[user.role]);
             ['tab-doctor', 'tab-predict', 'tab-verify', 'tab-fl', 'tab-blockchain'].forEach(tabId => {
-                document.getElementById(tabId).classList.toggle('hidden', !allowed.has(tabId));
-                document.getElementById('nav-' + tabId.slice(4)).classList.toggle('hidden', !allowed.has(tabId));
+                const isAllowed = allowed.has(tabId);
+                const panel = document.getElementById(tabId);
+                const nav = document.getElementById('nav-' + tabId.slice(4));
+                panel.classList.toggle('hidden', !isAllowed);
+                nav.classList.toggle('hidden', !isAllowed);
+                // Inline display prevents layout utilities such as "flex" from revealing restricted tabs.
+                panel.style.display = isAllowed ? '' : 'none';
+                nav.style.display = isAllowed ? '' : 'none';
             });
             document.getElementById('signed-in-user').textContent = user.name + ' · ' + user.role;
             document.getElementById('login-overlay').classList.add('hidden');
