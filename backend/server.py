@@ -290,25 +290,38 @@ class SecureHealthHandler(http.server.BaseHTTPRequestHandler):
 
         # API: EHR List
         if path == "/api/ehr/list":
-            user = self.require_role("admin", "doctor", "patient")
+            user = self.require_role("doctor", "patient")
             if not user:
                 return
-            query = urllib.parse.parse_qs(parsed.query)
-            patient_id = query.get("patient_id", [None])[0]
-            if user["role"] == "patient":
-                patient_id = str(user["id"])
             records = list(EHR_RECORDS_DB.values())
-            if patient_id:
-                records = [r for r in records if str(r["patient_id"]) == str(patient_id)]
+            if user["role"] == "patient":
+                # Patients can only read records owned by their authenticated account.
+                records = [record for record in records if str(record["patient_id"]) == str(user["id"])]
+            else:
+                # Doctors are limited to records at their assigned hospital.
+                records = [record for record in records if record.get("hospital_name") == user.get("hospital_name")]
+                requested_patient = urllib.parse.parse_qs(parsed.query).get("patient_id", [None])[0]
+                if requested_patient:
+                    patient = next((item for item in USERS_DB.values()
+                                    if str(item["id"]) == str(requested_patient)
+                                    and item["role"] == "patient"
+                                    and item.get("hospital_name") == user.get("hospital_name")), None)
+                    if not patient:
+                        self.send_json(403, {"success": False, "message": "That patient is outside your hospital"})
+                        return
+                    records = [record for record in records if str(record["patient_id"]) == str(patient["id"])]
             self.send_json(200, {"success": True, "records": records})
             return
 
         if path == "/api/ehr/patients":
-            if not self.require_role("doctor"):
+            doctor = self.require_role("doctor")
+            if not doctor:
                 return
             patients = [
-                {"id": user["id"], "name": user["name"]}
-                for user in USERS_DB.values() if user["role"] == "patient"
+                {"id": patient["id"], "name": patient["name"]}
+                for patient in USERS_DB.values()
+                if patient["role"] == "patient"
+                and patient.get("hospital_name") == doctor.get("hospital_name")
             ]
             self.send_json(200, {"success": True, "patients": patients})
             return
@@ -397,6 +410,8 @@ class SecureHealthHandler(http.server.BaseHTTPRequestHandler):
             return
 
         if path == "/api/auth/logout":
+            if not self.require_role("admin", "doctor", "patient"):
+                return
             header = self.headers.get("Authorization", "")
             _, _, token = header.partition(" ")
             SESSIONS.pop(token, None)
@@ -407,7 +422,7 @@ class SecureHealthHandler(http.server.BaseHTTPRequestHandler):
         # 2. AI RISK PREDICTION (MODULE 2 & 4)
         # ==========================================
         if path == "/api/ai/predict-risk":
-            if not self.require_role("doctor", "admin"):
+            if not self.require_role("doctor"):
                 return
             if not HAS_RISK_MODEL:
                 self.send_json(503, {"success": False, "message": "The sample risk model dependencies are unavailable"})
@@ -435,6 +450,9 @@ class SecureHealthHandler(http.server.BaseHTTPRequestHandler):
             patient = next((item for item in USERS_DB.values() if item["id"] == patient_id and item["role"] == "patient"), None)
             if not patient:
                 self.send_json(400, {"success": False, "message": "Choose a registered patient"})
+                return
+            if patient.get("hospital_name") != user.get("hospital_name"):
+                self.send_json(403, {"success": False, "message": "You can only create records for patients at your hospital"})
                 return
             doctor_id = user["id"]
             doctor_name = user["name"]
@@ -492,7 +510,7 @@ class SecureHealthHandler(http.server.BaseHTTPRequestHandler):
         # 4. QR VERIFICATION & TAMPER PROOF (MODULE 4)
         # ==========================================
         if path == "/api/verify/record":
-            if not self.require_role("admin", "doctor", "patient"):
+            if not self.require_role("doctor", "patient"):
                 return
             record_uuid = body.get("record_uuid")
             if not record_uuid or record_uuid not in EHR_RECORDS_DB:
@@ -503,6 +521,9 @@ class SecureHealthHandler(http.server.BaseHTTPRequestHandler):
             viewer = self.authenticated_user()
             if viewer["role"] == "patient" and str(record["patient_id"]) != str(viewer["id"]):
                 self.send_json(403, {"success": False, "message": "Patients can only verify their own records"})
+                return
+            if viewer["role"] == "doctor" and record.get("hospital_name") != viewer.get("hospital_name"):
+                self.send_json(403, {"success": False, "message": "You can only verify records from your hospital"})
                 return
             
             # Recalculate hash from CURRENT stored data
