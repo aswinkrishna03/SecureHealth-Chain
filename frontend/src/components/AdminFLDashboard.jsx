@@ -4,6 +4,7 @@ import { apiFetch } from '../api';
 export default function AdminFLDashboard() {
   const [flState, setFlState] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [audit, setAudit] = useState(null);
   const [logs, setLogs] = useState(['[*] Ready. Start a training simulation to see round output.']);
 
   const fetchStatus = async () => {
@@ -14,6 +15,16 @@ export default function AdminFLDashboard() {
     } catch (e) {
       console.error(e);
     }
+  };
+
+  const verifyUpdates = async () => {
+    setAudit(null);
+    try {
+      const res = await apiFetch('/api/fl/verify');
+      const data = await res.json();
+      if (!res.ok || !data.success) throw new Error(data.message || 'Verification failed');
+      setAudit(data);
+    } catch (e) { setAudit({ error: e.message }); }
   };
 
   useEffect(() => {
