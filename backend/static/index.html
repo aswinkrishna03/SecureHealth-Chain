@@ -24,7 +24,14 @@
             <label class="block text-sm text-slate-300">Password<input id="login-password" type="password" required autocomplete="current-password" class="mt-1 w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-white" /></label>
             <p id="login-error" role="alert" class="hidden text-sm text-rose-400"></p>
             <button id="login-submit" class="w-full bg-cyan-600 hover:bg-cyan-500 rounded-lg py-2.5 font-semibold">Sign in</button>
-            <p class="text-xs text-slate-500">Demo admin: admin@securehealth.org / admin</p>
+            <div class="pt-2 border-t border-slate-800">
+                <p class="text-xs text-slate-400 mb-2">Quick Demo Sign-In (Click to Fill &amp; Submit):</p>
+                <div class="grid grid-cols-3 gap-2 text-xs">
+                    <button type="button" onclick="quickSignIn('doctor@securehealth.org', 'doctor')" class="p-1.5 rounded bg-slate-800 hover:bg-slate-700 text-cyan-300 font-medium border border-slate-700">👨‍⚕️ Doctor</button>
+                    <button type="button" onclick="quickSignIn('patient@securehealth.org', 'patient')" class="p-1.5 rounded bg-slate-800 hover:bg-slate-700 text-emerald-300 font-medium border border-slate-700">👤 Patient</button>
+                    <button type="button" onclick="quickSignIn('admin@securehealth.org', 'admin')" class="p-1.5 rounded bg-slate-800 hover:bg-slate-700 text-purple-300 font-medium border border-slate-700">⚙️ Admin</button>
+                </div>
+            </div>
         </form>
     </div>
 
@@ -426,6 +433,12 @@
             const headers = new Headers(options.headers || {});
             if (sessionToken) headers.set('Authorization', `Bearer ${sessionToken}`);
             return window.fetch(url, { ...options, headers });
+        }
+
+        function quickSignIn(email, password) {
+            document.getElementById('login-email').value = email;
+            document.getElementById('login-password').value = password;
+            document.getElementById('login-submit').click();
         }
 
         async function signIn(event) {
