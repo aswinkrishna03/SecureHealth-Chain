@@ -193,6 +193,7 @@
                                 <th class="px-4 py-3">Patient</th>
                                 <th class="px-4 py-3">Hospital / Doctor</th>
                                 <th class="px-4 py-3">Diagnosis</th>
+                                <th class="px-4 py-3">Vitals</th>
                                 <th class="px-4 py-3">On-Chain SHA-256 Hash</th>
                                 <th class="px-4 py-3">Status</th>
                                 <th class="px-4 py-3 text-right">Actions</th>
@@ -442,18 +443,19 @@
 
             <div class="space-y-3 text-xs">
                 <div>
-                    <label class="block font-semibold text-slate-400 mb-1">Patient Name</label>
-                    <input type="text" id="modal-patient-name" value="Aswin Krishna" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-white">
+                    <label class="block font-semibold text-slate-400 mb-1">Registered Patient</label>
+                    <select id="modal-patient-id" required class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-white"></select>
                 </div>
                 <div>
                     <label class="block font-semibold text-slate-400 mb-1">Hospital / Clinic</label>
-                    <input type="text" id="modal-hospital-name" value="Metro Health General Hospital" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-white">
+                    <input type="text" id="modal-hospital-name" value="Assigned from doctor account" readonly class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-slate-400">
                 </div>
                 <div>
                     <label class="block font-semibold text-slate-400 mb-1">Clinical Diagnosis</label>
                     <input type="text" id="modal-diagnosis" value="Cardiovascular Routine Screening - Normal Sinus" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-white">
                 </div>
                 <div class="grid grid-cols-2 gap-3">
+                    <div><label class="block font-semibold text-slate-400 mb-1">Age (years)</label><input type="number" id="modal-age" min="0" max="120" value="48" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-white"></div>
                     <div>
                         <label class="block font-semibold text-slate-400 mb-1">Systolic BP</label>
                         <input type="number" id="modal-bp" value="122" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-white">
@@ -462,6 +464,9 @@
                         <label class="block font-semibold text-slate-400 mb-1">Cholesterol (mg/dl)</label>
                         <input type="number" id="modal-chol" value="195" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-white">
                     </div>
+                    <div><label class="block font-semibold text-slate-400 mb-1">Heart rate (bpm)</label><input type="number" id="modal-hr" min="20" max="250" value="72" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-white"></div>
+                    <div><label class="block font-semibold text-slate-400 mb-1">Blood glucose (mg/dL)</label><input type="number" id="modal-glucose" min="0" max="1000" value="95" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-white"></div>
+                    <div><label class="block font-semibold text-slate-400 mb-1">Oxygen saturation (%)</label><input type="number" id="modal-spo2" min="0" max="100" value="98" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-white"></div>
                 </div>
             </div>
 
@@ -680,7 +685,7 @@
         }
 
         function loadRoleDashboard(user) {
-            if (user.role === 'doctor') fetchRecords();
+            if (user.role === 'doctor') { fetchRecords(); fetchDoctorPatients(); }
             if (user.role === 'patient') fetchPatientRecords();
             if (user.role === 'admin') fetchFLStatus();
         }
@@ -727,9 +732,20 @@
                     clinician.textContent = `Doctor: ${record.doctor_name || 'Not specified'} · Hospital: ${record.hospital_name || 'Not specified'}`;
                     card.appendChild(clinician);
 
-                    const metrics = document.createElement('p');
-                    metrics.className = 'text-xs text-slate-400 break-words';
-                    metrics.textContent = 'Clinical details: ' + JSON.stringify(record.clinical_metrics || {});
+                    const metrics = document.createElement('dl');
+                    metrics.className = 'grid grid-cols-2 gap-2 border-t border-slate-800 pt-3 text-xs';
+                    const labels = { age: 'Age', resting_bp: 'Blood pressure (mm Hg)', cholesterol: 'Cholesterol (mg/dL)', heart_rate: 'Heart rate (bpm)', max_hr: 'Maximum heart rate (bpm)', blood_glucose: 'Blood glucose (mg/dL)', oxygen_saturation: 'Oxygen saturation (%)' };
+                    Object.entries(record.clinical_metrics || {}).forEach(([key, value]) => {
+                        const item = document.createElement('div');
+                        const label = document.createElement('dt');
+                        label.className = 'text-slate-500';
+                        label.textContent = labels[key] || key.replaceAll('_', ' ');
+                        const reading = document.createElement('dd');
+                        reading.className = 'text-slate-200';
+                        reading.textContent = String(value);
+                        item.append(label, reading);
+                        metrics.appendChild(item);
+                    });
                     card.appendChild(metrics);
 
                     const result = document.createElement('p');
@@ -791,6 +807,8 @@
                 tbody.innerHTML = "";
 
                 data.records.forEach(r => {
+                    const metrics = r.clinical_metrics || {};
+                    const vitalSummary = Object.entries(metrics).map(([key, value]) => `${key.replaceAll('_', ' ')}: ${value}`).join(' · ') || 'No vitals recorded';
                     const tr = document.createElement('tr');
                     tr.className = "hover:bg-slate-800/40 transition";
                     tr.innerHTML = `
@@ -798,6 +816,7 @@
                         <td class="px-4 py-3 font-medium text-white">${r.patient_name || 'Aswin Krishna'}</td>
                         <td class="px-4 py-3 text-xs text-slate-400">${r.hospital_name}</td>
                         <td class="px-4 py-3 text-xs text-slate-200">${r.diagnosis}</td>
+                        <td class="px-4 py-3 text-xs text-slate-300">${vitalSummary}</td>
                         <td class="px-4 py-3 font-mono text-xs text-slate-400 truncate max-w-xs" title="${r.record_hash}">${r.record_hash.substring(0, 14)}...</td>
                         <td class="px-4 py-3">
                             <span class="inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full bg-emerald-950 text-emerald-400 border border-emerald-800">
@@ -817,6 +836,36 @@
                 });
             } catch (err) {
                 console.error("Failed to load EHR records", err);
+            }
+        }
+
+        async function fetchDoctorPatients() {
+            const select = document.getElementById('modal-patient-id');
+            try {
+                const response = await apiFetch(`${API_BASE}/api/ehr/patients`);
+                const data = await response.json();
+                if (!response.ok || !data.success) throw new Error(data.message || 'Could not load patients');
+                select.replaceChildren();
+                (data.patients || []).forEach(patient => {
+                    const option = document.createElement('option');
+                    option.value = patient.id;
+                    option.textContent = patient.name;
+                    select.appendChild(option);
+                });
+                if (!select.options.length) {
+                    const option = document.createElement('option');
+                    option.value = '';
+                    option.textContent = 'No registered patients at this hospital';
+                    select.appendChild(option);
+                    select.disabled = true;
+                } else select.disabled = false;
+            } catch (error) {
+                select.replaceChildren();
+                const option = document.createElement('option');
+                option.value = '';
+                option.textContent = error.message || 'Could not load patients';
+                select.appendChild(option);
+                select.disabled = true;
             }
         }
 
@@ -989,24 +1038,25 @@
         function closeCreateModal() { document.getElementById('create-modal').classList.add('hidden'); }
 
         async function submitNewEHR() {
-            const patient_name = document.getElementById('modal-patient-name').value;
-            const hospital_name = document.getElementById('modal-hospital-name').value;
+            const patient_id = Number(document.getElementById('modal-patient-id').value);
             const diagnosis = document.getElementById('modal-diagnosis').value;
-            const bp = document.getElementById('modal-bp').value;
-            const chol = document.getElementById('modal-chol').value;
+            const clinical_metrics = {
+                age: Number(document.getElementById('modal-age').value),
+                resting_bp: Number(document.getElementById('modal-bp').value),
+                cholesterol: Number(document.getElementById('modal-chol').value),
+                heart_rate: Number(document.getElementById('modal-hr').value),
+                blood_glucose: Number(document.getElementById('modal-glucose').value),
+                oxygen_saturation: Number(document.getElementById('modal-spo2').value)
+            };
 
             try {
                 const res = await apiFetch(`${API_BASE}/api/ehr/create`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        patient_name,
-                        hospital_name,
-                        diagnosis,
-                        clinical_metrics: { resting_bp: bp, cholesterol: chol }
-                    })
+                    body: JSON.stringify({ patient_id, diagnosis, clinical_metrics })
                 });
                 const data = await res.json();
+                if (!res.ok || !data.success) throw new Error(data.message || 'Could not save record');
                 closeCreateModal();
                 fetchRecords();
                 viewQRCode(data.record.qr_code_url, data.record.record_uuid);
