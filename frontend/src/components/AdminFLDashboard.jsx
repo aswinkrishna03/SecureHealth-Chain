@@ -93,13 +93,13 @@ export default function AdminFLDashboard() {
               Trains locally from the Synthea ZIP in Downloads when present, using three virtual edge partitions. Per-patient gradients are clipped and noised with a composed RDP budget; CKKS encrypts node models for sample-weighted FedAvg. This single-process demo keeps the key custodian in the same process, and exact evaluation metrics are not DP. The data and model are for education, not clinical use.
             </p>
           </div>
-          <button
+          <button onClick={verifyUpdates} className="px-4 py-2.5 bg-slate-800 border border-slate-700 text-cyan-300 rounded-lg text-sm">Verify FL updates</button><div className="flex gap-2 flex-wrap"><button
             onClick={handleTriggerRound}
             disabled={loading}
             className="px-5 py-2.5 bg-gradient-to-r from-purple-600 to-cyan-600 hover:from-purple-500 hover:to-cyan-500 text-white font-bold rounded-lg text-sm transition flex items-center gap-2"
           >
             {loading ? '⏳ Training Across Nodes...' : '🚀 Start FL Training Round'}
-          </button>
+          </button></div>
         </div>
 
         <div className="bg-slate-950 rounded-lg p-4 border border-slate-800 text-xs font-mono space-y-2 text-slate-300 max-h-56 overflow-y-auto">
@@ -112,4 +112,6 @@ export default function AdminFLDashboard() {
       </div>
     </section>
   );
-}
+}        {audit && <p role="status" className="text-sm text-cyan-300">Ledger verification: {audit.error || (audit.verified_rounds + "/" + audit.total_rounds + " rounds verified")}</p>}
+        <div className="rounded-lg border border-slate-800 p-4"><h4 className="text-sm font-semibold text-white mb-2">Latest shared model updates (hashes only)</h4>{(flState?.history || []).slice().reverse().slice(0, 3).map((round) => <div key={round.round} className="border-t border-slate-800 py-2 text-xs text-slate-400"><div>Round {round.round} · global hash: <span className="font-mono break-all">{round.global_model_hash || "—"}</span></div>{(round.node_updates || []).map((node) => <div key={node.hospital}>{node.hospital} update: <span className="font-mono break-all">{node.update_hash || "—"}</span></div>)}</div>)}</div>
+
