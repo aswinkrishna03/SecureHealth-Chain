@@ -7,6 +7,7 @@ pycryptodome==3.20.0
 qrcode[pil]==7.4.2
 pillow==10.3.0
 mysql-connector-python==8.3.0
+pymysql>=1.1.0
 sqlalchemy==2.0.30
 flwr==1.8.0
 torch==2.3.0

@@ -117,6 +117,10 @@
                     <button onclick="switchRole('patient')" id="btn-role-patient" class="px-3 py-1.5 rounded-md text-slate-300 hover:text-white transition">👤 Patient</button>
                     <button onclick="switchRole('admin')" id="btn-role-admin" class="px-3 py-1.5 rounded-md text-slate-300 hover:text-white transition">⚙️ Admin / FL</button>
                 </div>
+                <div id="db-status-pill" class="hidden md:flex items-center space-x-2 text-xs bg-slate-800 border border-slate-700 text-slate-300 px-3 py-1.5 rounded-lg" title="Relational Database Status">
+                    <span id="db-status-dot" class="w-2 h-2 rounded-full bg-amber-400"></span>
+                    <span id="db-status-text">MySQL: Checking...</span>
+                </div>
                 <div class="hidden md:flex items-center space-x-2 text-xs bg-emerald-950/80 border border-emerald-700/60 text-emerald-400 px-3 py-1.5 rounded-lg">
                     <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
                     <span>Ganache: Connected</span>
@@ -385,7 +389,7 @@
         <!-- TAB 5: BLOCKCHAIN EXPLORER & LEDGER        -->
         <!-- ========================================== -->
         <section id="tab-blockchain" class="hidden space-y-6">
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
                 <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl shadow">
                     <span class="text-xs text-slate-400 block">Total Blocks Mined</span>
                     <span id="bc-total-blocks" class="text-2xl font-black text-cyan-400">--</span>
@@ -401,6 +405,10 @@
                 <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl shadow">
                     <span class="text-xs text-slate-400 block">Ethereum Ganache Link</span>
                     <span id="bc-ganache-status" class="text-xs font-bold text-amber-400 block mt-2">Checking RPC...</span>
+                </div>
+                <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl shadow">
+                    <span class="text-xs text-slate-400 block">Relational Database Engine</span>
+                    <span id="db-engine-status" class="text-xs font-bold text-cyan-400 block mt-2">Checking MySQL...</span>
                 </div>
             </div>
 
@@ -877,6 +885,7 @@
         // Fetch and render Blockchain Blocks
         async function fetchBlocks() {
             try {
+                fetchDbStatus();
                 const res = await apiFetch(`${API_BASE}/api/blockchain/blocks`);
                 const data = await res.json();
                 document.getElementById('bc-total-blocks').innerText = data.total_blocks;
@@ -930,9 +939,44 @@
             }
         }
 
+        async function fetchDbStatus() {
+            try {
+                const res = await window.fetch(`${API_BASE}/api/db/status`);
+                const data = await res.json();
+                if (data && data.db_status) {
+                    const st = data.db_status;
+                    const pillText = document.getElementById('db-status-text');
+                    const pillDot = document.getElementById('db-status-dot');
+                    const pillContainer = document.getElementById('db-status-pill');
+                    const engineStatus = document.getElementById('db-engine-status');
+                    
+                    if (st.connected) {
+                        if (pillText) pillText.textContent = `MySQL: Connected (${st.database})`;
+                        if (pillDot) pillDot.className = 'w-2 h-2 rounded-full bg-emerald-400 animate-pulse';
+                        if (pillContainer) pillContainer.className = 'hidden md:flex items-center space-x-2 text-xs bg-emerald-950/80 border border-emerald-700/60 text-emerald-400 px-3 py-1.5 rounded-lg';
+                        if (engineStatus) {
+                            engineStatus.textContent = `MySQL 8.x (${st.database} on ${st.host}:${st.port})`;
+                            engineStatus.className = 'text-xs font-bold text-emerald-400 block mt-2';
+                        }
+                    } else {
+                        if (pillText) pillText.textContent = `MySQL: Offline (In-Memory Ready)`;
+                        if (pillDot) pillDot.className = 'w-2 h-2 rounded-full bg-amber-400';
+                        if (pillContainer) pillContainer.className = 'hidden md:flex items-center space-x-2 text-xs bg-amber-950/80 border border-amber-700/60 text-amber-400 px-3 py-1.5 rounded-lg';
+                        if (engineStatus) {
+                            engineStatus.textContent = `In-Memory Mode (Ready on ${st.host}:${st.port})`;
+                            engineStatus.className = 'text-xs font-bold text-amber-400 block mt-2';
+                        }
+                    }
+                }
+            } catch (e) {
+                console.log('DB status check note:', e);
+            }
+        }
+
         // Initialize on load
         window.onload = function() {
             restoreSession();
+            fetchDbStatus();
         };
     </script>
 </body>

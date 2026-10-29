@@ -18,45 +18,24 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from services.crypto_service import calculate_ehr_hash
 from services.blockchain_service import blockchain_service
 from services.qr_service import generate_ehr_qr_code
+from services.db_service import db_service, hash_password, verify_password
 
 app = Flask(__name__)
 CORS(app)
 
-# In-Memory stores for lightweight demonstration (can be linked to MySQL)
-USERS_DB = {
-    "admin@securehealth.org": {
-        "id": 1,
-        "name": "System Administrator",
-        "email": "admin@securehealth.org",
-        "password_hash": generate_password_hash("admin123"),
-        "role": "admin",
-        "hospital_name": "Health Network HQ"
-    },
-    "doctor@securehealth.org": {
-        "id": 2,
-        "name": "Dr. Sarah Jenkins",
-        "email": "doctor@securehealth.org",
-        "password_hash": generate_password_hash("doctor123"),
-        "role": "doctor",
-        "hospital_name": "Metro Health General Hospital"
-    },
-    "patient@securehealth.org": {
-        "id": 3,
-        "name": "Aswin Krishna",
-        "email": "patient@securehealth.org",
-        "password_hash": generate_password_hash("patient123"),
-        "role": "patient",
-        "hospital_name": "Metro Health General Hospital"
-    }
-}
-
-EHR_RECORDS_DB = {}
-VERIFICATION_AUDIT_LOGS = []
+# Dual-mode data stores backed by MySQL
+USERS_DB = db_service.users_cache
+EHR_RECORDS_DB = db_service.ehr_cache
+VERIFICATION_AUDIT_LOGS = db_service.audit_cache
 
 # Serve QR Code images
 @app.route('/static/qrcodes/<path:filename>')
 def serve_qr(filename):
     return send_from_directory('static/qrcodes', filename)
+
+@app.route('/api/db/status', methods=['GET'])
+def get_db_status():
+    return jsonify({"success": True, "db_status": db_service.get_status()}), 200
 
 # ==========================================
 # MODULE 1: AUTHENTICATION & ROLE MANAGEMENT
@@ -68,8 +47,8 @@ def login():
     email = data.get("email", "").strip().lower()
     password = data.get("password", "")
 
-    user = USERS_DB.get(email)
-    if not user or not check_password_hash(user["password_hash"], password):
+    user = db_service.get_user_by_email(email)
+    if not user or not verify_password(password, user["password_hash"]):
         return jsonify({"success": False, "message": "Invalid email or password"}), 401
 
     return jsonify({
@@ -94,20 +73,21 @@ def register():
     password = data.get("password", "")
     hospital_name = data.get("hospital_name", "Metro Health General Hospital")
 
-    if email in USERS_DB:
+    if db_service.get_user_by_email(email):
         return jsonify({"success": False, "message": "User already exists"}), 400
 
-    new_id = len(USERS_DB) + 1
-    USERS_DB[email] = {
-        "id": new_id,
-        "name": name,
-        "email": email,
-        "password_hash": generate_password_hash(password),
-        "role": role,
-        "hospital_name": hospital_name
-    }
-
-    return jsonify({"success": True, "message": "User registered successfully", "id": new_id}), 201
+    new_user = db_service.create_user(name=name, email=email, password_hash=hash_password(password), role=role, hospital_name=hospital_name)
+    return jsonify({
+        "success": True,
+        "message": "User registered successfully",
+        "user": {
+            "id": new_user["id"],
+            "name": new_user["name"],
+            "email": new_user["email"],
+            "role": new_user["role"],
+            "hospital_name": new_user["hospital_name"]
+        }
+    }), 201
 
 # ==========================================
 # MODULE 2 & 4: AI DISEASE RISK PREDICTION
@@ -180,7 +160,7 @@ def create_ehr():
     qr_url = generate_ehr_qr_code(record_payload)
 
     # 4. Save Record
-    EHR_RECORDS_DB[record_uuid] = {
+    new_record = {
         "record_uuid": record_uuid,
         "patient_id": patient_id,
         "doctor_id": doctor_id,
@@ -192,20 +172,20 @@ def create_ehr():
         "qr_code_url": qr_url,
         "created_at": datetime.datetime.now().isoformat()
     }
+    db_service.save_ehr_record(new_record)
+    EHR_RECORDS_DB[record_uuid] = new_record
 
     return jsonify({
         "success": True,
         "message": "EHR sealed on Ethereum blockchain" if bc_result.get("mode") == "live_blockchain" else "EHR sealed in the in-memory demo ledger",
         "ledger_mode": bc_result.get("mode"),
-        "record": EHR_RECORDS_DB[record_uuid]
+        "record": new_record
     }), 201
 
 @app.route('/api/ehr/list', methods=['GET'])
 def list_ehrs():
     patient_id = request.args.get("patient_id")
-    records = list(EHR_RECORDS_DB.values())
-    if patient_id:
-        records = [r for r in records if str(r["patient_id"]) == str(patient_id)]
+    records = db_service.get_all_ehr_records(int(patient_id) if patient_id else None)
     return jsonify({"success": True, "records": records}), 200
 
 # ==========================================

@@ -22,6 +22,7 @@ from typing import Dict, Any
 from services.crypto_service import calculate_ehr_hash
 from services.qr_service import generate_ehr_qr_code
 from services.blockchain_ledger import blockchain_ledger
+from services.db_service import db_service, hash_password, verify_password
 
 # Dynamic imports
 import sys
@@ -37,83 +38,25 @@ except Exception as e:
     predict_risk = None
     print(f"[Warning] FL simulation engine not loaded: {e}")
 
-PORT = 5000
+PORT = int(os.environ.get("PORT", 5000))
 
-# Demo users are hashed at startup; newly registered accounts use the same format.
-def hash_password(password: str, salt: bytes = None) -> str:
-    salt = salt or secrets.token_bytes(16)
-    digest = hashlib.pbkdf2_hmac("sha256", password.encode("utf-8"), salt, 310000)
-    return f"{salt.hex()}${digest.hex()}"
-
-def verify_password(password: str, stored: str) -> bool:
-    try:
-        salt_hex, digest_hex = stored.split("$", 1)
-        candidate = hash_password(password, bytes.fromhex(salt_hex)).split("$", 1)[1]
-        return hmac.compare_digest(candidate, digest_hex)
-    except (ValueError, TypeError):
-        return False
-
-USERS_DB = {
-    "admin@securehealth.org": {
-        "id": 1,
-        "name": "System Administrator",
-        "email": "admin@securehealth.org",
-        "password_hash": hash_password("admin"),
-        "role": "admin",
-        "hospital_name": "Health Network HQ"
-    },
-    "doctor@securehealth.org": {
-        "id": 2,
-        "name": "Dr. Sarah Jenkins",
-        "email": "doctor@securehealth.org",
-        "password_hash": hash_password("doctor"),
-        "role": "doctor",
-        "hospital_name": "Metro Health General Hospital"
-    },
-    "patient@securehealth.org": {
-        "id": 3,
-        "name": "Aswin Krishna",
-        "email": "patient@securehealth.org",
-        "password_hash": hash_password("patient"),
-        "role": "patient",
-        "hospital_name": "Metro Health General Hospital"
-    }
-}
+# Dual-mode in-memory & MySQL references
+USERS_DB = db_service.users_cache
+EHR_RECORDS_DB = db_service.ehr_cache
+AUDIT_LOGS = db_service.audit_cache
 SESSIONS = {}
-
-EHR_RECORDS_DB = {
-    "EHR-DEMO-001": {
-        "record_uuid": "EHR-DEMO-001",
-        "patient_id": 3,
-        "doctor_id": 2,
-        "patient_name": "Aswin Krishna",
-        "doctor_name": "Dr. Sarah Jenkins",
-        "hospital_name": "Metro Health General Hospital",
-        "diagnosis": "Cardiovascular Assessment - Normal Sinus Rhythm",
-        "clinical_metrics": {
-            "age": 48,
-            "resting_bp": 122,
-            "cholesterol": 195,
-            "max_hr": 154,
-            "fasting_blood_sugar": 0,
-            "angina": 0
-        },
-        "record_hash": "0x7a8f9c1b2e3d4f5a6b7c8d9e0f1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f90",
-        "blockchain_tx_hash": "0x4b6d91f2c83a74e50d18293746a5b2c1d3e4f5a6b7c8d9e0f1a2b3c4d5e6f7a8",
-        "qr_code_url": "/static/qrcodes/EHR-DEMO-001.svg",
-        "created_at": "2026-10-26T20:15:00Z"
-    }
-}
 IOMT_READINGS_DB = []
 
-# Create a demo seal whose database record and ledger hash match each other.
-demo_record = EHR_RECORDS_DB["EHR-DEMO-001"]
-demo_record["record_hash"] = calculate_ehr_hash(
-    demo_record["patient_id"], demo_record["hospital_name"], demo_record["diagnosis"], demo_record["clinical_metrics"]
-)
-demo_chain_receipt = blockchain_ledger.register_ehr_record("EHR-DEMO-001", demo_record["record_hash"])
-demo_record["blockchain_tx_hash"] = demo_chain_receipt["tx_hash"]
-demo_record["qr_code_url"] = generate_ehr_qr_code(demo_record)
+# Synchronize demo seal whose database record and ledger hash match each other.
+demo_record = db_service.get_ehr_record("EHR-DEMO-001")
+if demo_record:
+    demo_record["record_hash"] = calculate_ehr_hash(
+        demo_record["patient_id"], demo_record["hospital_name"], demo_record["diagnosis"], demo_record["clinical_metrics"]
+    )
+    demo_chain_receipt = blockchain_ledger.register_ehr_record("EHR-DEMO-001", demo_record["record_hash"])
+    demo_record["blockchain_tx_hash"] = demo_chain_receipt["tx_hash"]
+    demo_record["qr_code_url"] = generate_ehr_qr_code(demo_record)
+    db_service.save_ehr_record(demo_record)
 
 # No fake training rounds are preloaded; metrics appear after a simulation.
 
@@ -155,7 +98,10 @@ IOMT_METRICS = {
 
 
 def registered_patient(patient_id):
-    return next((item for item in USERS_DB.values() if item["id"] == patient_id and item["role"] == "patient"), None)
+    p = db_service.get_user_by_id(patient_id)
+    if p and p.get("role") == "patient":
+        return p
+    return next((item for item in db_service.users_cache.values() if item["id"] == patient_id and item["role"] == "patient"), None)
 
 
 def seal_ehr_record(doctor, patient, diagnosis, clinical_metrics, source_system, recorded_at=None):
@@ -189,12 +135,15 @@ def seal_ehr_record(doctor, patient, diagnosis, clinical_metrics, source_system,
         }), "created_at": created_at, "recorded_at": recorded_at or created_at,
         "source_system": source_system,
     }
-    EHR_RECORDS_DB[record_uuid] = record
-    AUDIT_LOGS.append({
-        "id": len(AUDIT_LOGS) + 1, "record_uuid": record_uuid, "action": "EHR_HASH_SEALED_LOCAL",
-        "status": "VERIFIED_AUTHENTIC", "timestamp": created_at,
-        "details": f"Imported from {source_system}; local demo-ledger transaction {tx_hash[:16]}...",
-    })
+    db_service.save_ehr_record(record)
+    db_service.save_audit_log(
+        record_uuid=record_uuid,
+        action="EHR_HASH_SEALED_LOCAL",
+        status="VERIFIED_AUTHENTIC",
+        details=f"Imported from {source_system}; local demo-ledger transaction {tx_hash[:16]}...",
+        performed_by=doctor["id"],
+        tx_hash=tx_hash
+    )
     return record
 
 class SecureHealthHandler(http.server.BaseHTTPRequestHandler):
@@ -288,6 +237,14 @@ class SecureHealthHandler(http.server.BaseHTTPRequestHandler):
             self.serve_file(file_path, mime)
             return
 
+        # API: Database Status & Health
+        if path == "/api/db/status":
+            self.send_json(200, {
+                "success": True,
+                "db_status": db_service.get_status()
+            })
+            return
+
         # API: EHR List
         if path == "/api/ehr/list":
             user = self.require_role("admin", "doctor", "patient")
@@ -296,20 +253,15 @@ class SecureHealthHandler(http.server.BaseHTTPRequestHandler):
             query = urllib.parse.parse_qs(parsed.query)
             patient_id = query.get("patient_id", [None])[0]
             if user["role"] == "patient":
-                patient_id = str(user["id"])
-            records = list(EHR_RECORDS_DB.values())
-            if patient_id:
-                records = [r for r in records if str(r["patient_id"]) == str(patient_id)]
+                patient_id = user["id"]
+            records = db_service.get_all_ehr_records(int(patient_id) if patient_id else None)
             self.send_json(200, {"success": True, "records": records})
             return
 
         if path == "/api/ehr/patients":
             if not self.require_role("doctor"):
                 return
-            patients = [
-                {"id": user["id"], "name": user["name"]}
-                for user in USERS_DB.values() if user["role"] == "patient"
-            ]
+            patients = db_service.get_all_patients()
             self.send_json(200, {"success": True, "patients": patients})
             return
 
@@ -339,16 +291,21 @@ class SecureHealthHandler(http.server.BaseHTTPRequestHandler):
         if path == "/api/admin/stats":
             if not self.require_role("admin"):
                 return
+            db_stat = db_service.get_status()
             self.send_json(200, {
                 "success": True,
                 "stats": {
-                    "total_records": len(EHR_RECORDS_DB),
-                    "total_users": len(USERS_DB),
+                    "total_records": len(db_service.ehr_cache),
+                    "total_users": len(db_service.users_cache),
                     "fl_rounds": FL_STATE["total_rounds"],
                     "global_model_accuracy": f"{FL_STATE['current_accuracy']}%",
                     "blockchain_network": "Local in-memory demo ledger",
                     "contract_status": "NOT_CONNECTED",
-                    "audit_logs": AUDIT_LOGS
+                    "database_mode": db_stat["mode"],
+                    "is_mysql_connected": db_stat["connected"],
+                    "database_name": db_stat["database"],
+                    "database_host": f"{db_stat['host']}:{db_stat['port']}",
+                    "audit_logs": db_service.get_all_audit_logs()
                 }
             })
             return
@@ -366,7 +323,7 @@ class SecureHealthHandler(http.server.BaseHTTPRequestHandler):
         if path == "/api/auth/login":
             email = body.get("email", "").strip().lower()
             password = body.get("password", "")
-            user = USERS_DB.get(email)
+            user = db_service.get_user_by_email(email)
             if not user or not verify_password(password, user["password_hash"]):
                 self.send_json(401, {"success": False, "message": "Invalid email or password"})
                 return
@@ -388,11 +345,10 @@ class SecureHealthHandler(http.server.BaseHTTPRequestHandler):
             if not email or "@" not in email or not name or len(password) < 8:
                 self.send_json(400, {"success": False, "message": "Enter a valid email, name, and password with at least 8 characters"})
                 return
-            if email in USERS_DB:
+            if db_service.get_user_by_email(email):
                 self.send_json(409, {"success": False, "message": "An account with this email already exists"})
                 return
-            new_id = max((user["id"] for user in USERS_DB.values()), default=0) + 1
-            USERS_DB[email] = {"id": new_id, "name": name, "email": email, "password_hash": hash_password(password), "role": "patient", "hospital_name": hospital_name}
+            db_service.create_user(name=name, email=email, password_hash=hash_password(password), role="patient", hospital_name=hospital_name)
             self.send_json(201, {"success": True, "message": "Patient account created. Sign in to continue."})
             return
 
@@ -432,8 +388,8 @@ class SecureHealthHandler(http.server.BaseHTTPRequestHandler):
             except (TypeError, ValueError):
                 self.send_json(400, {"success": False, "message": "Choose a valid patient"})
                 return
-            patient = next((item for item in USERS_DB.values() if item["id"] == patient_id and item["role"] == "patient"), None)
-            if not patient:
+            patient = db_service.get_user_by_id(patient_id)
+            if not patient or patient.get("role") != "patient":
                 self.send_json(400, {"success": False, "message": "Choose a registered patient"})
                 return
             doctor_id = user["id"]
@@ -474,16 +430,16 @@ class SecureHealthHandler(http.server.BaseHTTPRequestHandler):
                 "qr_code_url": qr_url,
                 "created_at": datetime.datetime.now().isoformat()
             }
-            EHR_RECORDS_DB[record_uuid] = new_record
+            db_service.save_ehr_record(new_record)
 
-            AUDIT_LOGS.append({
-                "id": len(AUDIT_LOGS) + 1,
-                "record_uuid": record_uuid,
-                "action": "EHR_HASH_SEALED_LOCAL",
-                "status": "VERIFIED_AUTHENTIC",
-                "timestamp": datetime.datetime.now().isoformat(),
-                "details": f"Created by {doctor_name} at {hospital_name}. Local demo-ledger transaction: {tx_hash[:16]}..."
-            })
+            db_service.save_audit_log(
+                record_uuid=record_uuid,
+                action="EHR_HASH_SEALED_LOCAL",
+                status="VERIFIED_AUTHENTIC",
+                details=f"Created by {doctor_name} at {hospital_name}. Local demo-ledger transaction: {tx_hash[:16]}...",
+                performed_by=doctor_id,
+                tx_hash=tx_hash
+            )
 
             self.send_json(201, {"success": True, "record": new_record})
             return
@@ -495,11 +451,11 @@ class SecureHealthHandler(http.server.BaseHTTPRequestHandler):
             if not self.require_role("admin", "doctor", "patient"):
                 return
             record_uuid = body.get("record_uuid")
-            if not record_uuid or record_uuid not in EHR_RECORDS_DB:
+            record = db_service.get_ehr_record(record_uuid) if record_uuid else None
+            if not record:
                 self.send_json(404, {"success": False, "message": "Record ID not found on system"})
                 return
 
-            record = EHR_RECORDS_DB[record_uuid]
             viewer = self.authenticated_user()
             if viewer["role"] == "patient" and str(record["patient_id"]) != str(viewer["id"]):
                 self.send_json(403, {"success": False, "message": "Patients can only verify their own records"})
@@ -517,15 +473,14 @@ class SecureHealthHandler(http.server.BaseHTTPRequestHandler):
             bc_result = blockchain_ledger.verify_ehr_record(record_uuid, recomputed_hash)
             is_authentic = bc_result.get("is_valid", False)
 
-            audit = {
-                "id": len(AUDIT_LOGS) + 1,
-                "record_uuid": record_uuid,
-                "action": "VERIFICATION_CHECK",
-                "status": "VERIFIED_AUTHENTIC" if is_authentic else "TAMPER_DETECTED",
-                "timestamp": datetime.datetime.now().isoformat(),
-                "details": f"Local ledger block #{bc_result.get('block_number')}: " + ("Hash matched" if is_authentic else "Hash mismatch; record contents differ from the sealed value")
-            }
-            AUDIT_LOGS.append(audit)
+            audit_entry = db_service.save_audit_log(
+                record_uuid=record_uuid,
+                action="VERIFICATION_CHECK",
+                status="VERIFIED_AUTHENTIC" if is_authentic else "TAMPER_DETECTED",
+                details=f"Local ledger block #{bc_result.get('block_number')}: " + ("Hash matched" if is_authentic else "Hash mismatch; record contents differ from the sealed value"),
+                performed_by=viewer["id"] if viewer else None,
+                tx_hash=bc_result.get("tx_hash")
+            )
 
             self.send_json(200, {
                 "success": True,
@@ -549,9 +504,9 @@ class SecureHealthHandler(http.server.BaseHTTPRequestHandler):
             if not self.require_role("admin"):
                 return
             record_uuid = body.get("record_uuid")
-            if record_uuid in EHR_RECORDS_DB:
-                EHR_RECORDS_DB[record_uuid]["diagnosis"] = "[TAMPERED DATA] Malicious Alteration Detected!"
-                EHR_RECORDS_DB[record_uuid]["clinical_metrics"]["cholesterol"] = 999
+            record = db_service.get_ehr_record(record_uuid) if record_uuid else None
+            if record:
+                db_service.tamper_ehr_record(record_uuid)
                 self.send_json(200, {
                     "success": True,
                     "message": f"Record {record_uuid} was intentionally modified in the database. Scan or verify now to watch tamper detection flag it in red!"
@@ -588,6 +543,15 @@ class SecureHealthHandler(http.server.BaseHTTPRequestHandler):
                 # Append the simulated global model hash to the local demo ledger.
                 blockchain_ledger.publish_global_fl_model(FL_STATE["total_rounds"], results["final_global_hash"])
 
+                # Save FL round audit into database
+                db_service.save_fl_round(
+                    round_number=FL_STATE["total_rounds"],
+                    global_model_hash=results["final_global_hash"],
+                    accuracy=results["final_accuracy"],
+                    tx_hash=results["latest_tx_hash"],
+                    participating_nodes=3
+                )
+
                 self.send_json(200, {"success": True, "results": results})
             else:
                 self.send_json(503, {"success": False, "message": "FL simulation dependencies are unavailable; no training result was generated."})
@@ -598,9 +562,17 @@ class SecureHealthHandler(http.server.BaseHTTPRequestHandler):
 def run_server():
     server_address = ("127.0.0.1", PORT)
     httpd = socketserver.TCPServer(server_address, SecureHealthHandler)
+    stat = db_service.get_status()
     print("=" * 70)
     print(" [*] SECUREHEALTH CHAIN: PLATFORM SERVER RUNNING")
     print(f" [*] Access Web Application at: http://127.0.0.1:{PORT}")
+    print(f" [*] Database Architecture:     {stat['mode']}")
+    if stat['connected']:
+        print(f" [*] MySQL Connected:           {stat['host']}:{stat['port']} -> {stat['database']}")
+    else:
+        print(f" [*] MySQL Database Host:       {stat['host']}:{stat['port']} (Status: Offline)")
+        print(f"     -> Operating in zero-setup in-memory fallback mode.")
+        print(f"     -> Start MySQL (e.g. XAMPP) anytime to persist records permanently.")
     print(" [*] Default Logins:")
     print("     - Doctor:  doctor@securehealth.org  (Password: doctor)")
     print("     - Patient: patient@securehealth.org (Password: patient)")
