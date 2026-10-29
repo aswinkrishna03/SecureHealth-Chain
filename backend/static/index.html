@@ -110,20 +110,17 @@
                 </div>
             </div>
 
-            <!-- Role Selector & Status -->
-            <div class="flex items-center space-x-3">
-                <div class="flex bg-slate-800 p-1 rounded-lg border border-slate-700 text-xs font-medium">
-                    <button onclick="switchRole('doctor')" id="btn-role-doctor" class="px-3 py-1.5 rounded-md bg-cyan-600 text-white transition">👨‍⚕️ Doctor</button>
-                    <button onclick="switchRole('patient')" id="btn-role-patient" class="px-3 py-1.5 rounded-md text-slate-300 hover:text-white transition">👤 Patient</button>
-                    <button onclick="switchRole('admin')" id="btn-role-admin" class="px-3 py-1.5 rounded-md text-slate-300 hover:text-white transition">⚙️ Admin / FL</button>
-                </div>
+            <!-- Authenticated account and sign-out -->
+            <div class="flex items-center gap-3">
+                <span id="signed-in-user" class="text-xs text-slate-300"></span>
+                <button onclick="signOut()" class="text-xs border border-slate-700 rounded-lg px-3 py-2 text-slate-300 hover:text-white">Sign out</button>
                 <div id="db-status-pill" class="hidden md:flex items-center space-x-2 text-xs bg-slate-800 border border-slate-700 text-slate-300 px-3 py-1.5 rounded-lg" title="Relational Database Status">
                     <span id="db-status-dot" class="w-2 h-2 rounded-full bg-amber-400"></span>
                     <span id="db-status-text">MySQL: Checking...</span>
                 </div>
                 <div class="hidden md:flex items-center space-x-2 text-xs bg-emerald-950/80 border border-emerald-700/60 text-emerald-400 px-3 py-1.5 rounded-lg">
                     <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-                    <span>Ganache: Connected</span>
+                    <span>Local demo ledger</span>
                 </div>
             </div>
         </div>
@@ -495,6 +492,17 @@
     <script>
         const API_BASE = "";
         let sessionToken = sessionStorage.getItem('securehealth_token') || '';
+        let currentUser = null;
+        const ROLE_TABS = {
+            doctor: ['tab-doctor', 'tab-predict', 'tab-verify'],
+            patient: ['tab-verify'],
+            admin: ['tab-predict', 'tab-verify', 'tab-fl', 'tab-blockchain']
+        };
+        const ROLE_DEFAULT_TAB = {
+            doctor: 'tab-doctor',
+            patient: 'tab-verify',
+            admin: 'tab-fl'
+        };
 
         async function apiFetch(url, options = {}) {
             const headers = new Headers(options.headers || {});
@@ -581,9 +589,9 @@
                 if (!response.ok || !data.success) throw new Error(data.message || 'Sign in failed');
                 sessionToken = data.token;
                 sessionStorage.setItem('securehealth_token', sessionToken);
-                document.getElementById('login-overlay').classList.add('hidden');
+                applyRoleAccess(data.user);
                 fetchRecords();
-                fetchBlocks();
+                if (data.user.role === 'admin') fetchBlocks();
             } catch (error) {
                 errorBox.textContent = error.message;
                 errorBox.classList.remove('hidden');
@@ -598,11 +606,13 @@
             try {
                 const response = await apiFetch(`${API_BASE}/api/auth/me`);
                 if (!response.ok) throw new Error('Session expired');
-                document.getElementById('login-overlay').classList.add('hidden');
+                const data = await response.json();
+                applyRoleAccess(data.user);
                 fetchRecords();
-                fetchBlocks();
+                if (data.user.role === 'admin') fetchBlocks();
             } catch {
                 sessionToken = '';
+                currentUser = null;
                 sessionStorage.removeItem('securehealth_token');
             }
         }
@@ -618,10 +628,17 @@
 
         // Tab Switching
         function showTab(tabId) {
+            const allowed = ROLE_TABS[currentUser?.role] || [];
+            if (!currentUser || !allowed.includes(tabId)) return false;
+
             ['tab-doctor', 'tab-predict', 'tab-verify', 'tab-fl', 'tab-blockchain'].forEach(id => {
-                document.getElementById(id).classList.add('hidden');
+                const panel = document.getElementById(id);
+                panel.classList.add('hidden');
+                panel.style.display = 'none';
             });
-            document.getElementById(tabId).classList.remove('hidden');
+            const activePanel = document.getElementById(tabId);
+            activePanel.classList.remove('hidden');
+            activePanel.style.display = '';
 
             document.querySelectorAll('.tab-btn').forEach(btn => {
                 btn.classList.remove('border-cyan-500', 'text-cyan-400');
@@ -638,20 +655,34 @@
             document.getElementById(activeNav).classList.remove('border-transparent', 'text-slate-400');
 
             if (tabId === 'tab-blockchain') fetchBlocks();
+            return true;
         }
 
-        // Role Switching
-        function switchRole(role) {
-            ['doctor', 'patient', 'admin'].forEach(r => {
-                const btn = document.getElementById(`btn-role-${r}`);
-                btn.className = "px-3 py-1.5 rounded-md text-slate-300 hover:text-white transition";
+        function applyRoleAccess(user) {
+            if (!user || !ROLE_TABS[user.role]) throw new Error('The signed-in account has no valid portal role.');
+            currentUser = user;
+            const allowed = new Set(ROLE_TABS[user.role]);
+            ['tab-doctor', 'tab-predict', 'tab-verify', 'tab-fl', 'tab-blockchain'].forEach(tabId => {
+                const isAllowed = allowed.has(tabId);
+                const panel = document.getElementById(tabId);
+                const nav = document.getElementById('nav-' + tabId.slice(4));
+                panel.classList.toggle('hidden', !isAllowed);
+                nav.classList.toggle('hidden', !isAllowed);
+                // Inline display prevents layout utilities such as "flex" from revealing restricted tabs.
+                panel.style.display = isAllowed ? '' : 'none';
+                nav.style.display = isAllowed ? '' : 'none';
             });
-            const activeBtn = document.getElementById(`btn-role-${role}`);
-            activeBtn.className = "px-3 py-1.5 rounded-md bg-cyan-600 text-white transition";
+            document.getElementById('signed-in-user').textContent = user.name + ' · ' + user.role;
+            document.getElementById('login-overlay').classList.add('hidden');
+            showTab(ROLE_DEFAULT_TAB[user.role]);
+        }
 
-            if (role === 'doctor') showTab('tab-doctor');
-            if (role === 'patient') showTab('tab-verify');
-            if (role === 'admin') showTab('tab-fl');
+        async function signOut() {
+            try { await apiFetch(`${API_BASE}/api/auth/logout`, { method: 'POST' }); } catch {}
+            sessionToken = '';
+            currentUser = null;
+            sessionStorage.removeItem('securehealth_token');
+            window.location.reload();
         }
 
         // Fetch and display EHR records
