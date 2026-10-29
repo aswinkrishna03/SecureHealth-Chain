@@ -2,10 +2,11 @@ import React from 'react';
 
 export default function Navbar({ user, onLogout, activeTab, setActiveTab }) {
   const allTabs = [
-    { id: 'doctor', label: '📋 Clinical Records & Sealing', roles: ['doctor'] },
-    { id: 'predict', label: '🧠 AI Disease Risk Predictor', roles: ['doctor', 'admin'] },
-    { id: 'verify', label: '🔍 QR Scan & Hash Verification', roles: ['doctor', 'patient', 'admin'] },
-    { id: 'fl', label: '🌐 Federated Learning & Telemetry', roles: ['admin'] },
+    { id: 'doctor', label: '📋 Clinical Worklist & EHR', roles: ['doctor'] },
+    { id: 'predict', label: '🧠 Risk Assessment', roles: ['doctor'] },
+    { id: 'verify', label: '🔍 Record Integrity Checks', roles: ['doctor'] },
+    { id: 'patient', label: '🩺 My Health Records', roles: ['patient'] },
+    { id: 'fl', label: '⚙️ Admin Operations & FL', roles: ['admin'] },
   ];
   const tabs = allTabs.filter((tab) => tab.roles.includes(user.role));
 

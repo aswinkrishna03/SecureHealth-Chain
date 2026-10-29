@@ -132,6 +132,9 @@
             <button onclick="showTab('tab-doctor')" id="nav-doctor" class="tab-btn py-3 border-b-2 border-cyan-500 text-cyan-400 flex items-center space-x-2">
                 <span>📋 Clinical Records & Sealing</span>
             </button>
+            <button onclick="showTab('tab-patient')" id="nav-patient" class="tab-btn py-3 border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center space-x-2">
+                <span>🩺 My Health Records</span>
+            </button>
             <button onclick="showTab('tab-predict')" id="nav-predict" class="tab-btn py-3 border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center space-x-2">
                 <span>🧠 AI Disease Risk Predictor</span>
             </button>
@@ -149,6 +152,17 @@
 
     <!-- Main Container -->
     <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-1 w-full">
+
+        <!-- PATIENT PORTAL: authenticated patient's own records only -->
+        <section id="tab-patient" class="hidden space-y-6">
+            <div class="bg-slate-900 border border-slate-800 rounded-xl p-6 shadow-xl">
+                <p class="text-xs font-bold uppercase tracking-wider text-cyan-400">Patient Portal</p>
+                <h2 class="mt-2 text-2xl font-bold text-white">My Health Records</h2>
+                <p class="mt-2 text-sm text-slate-400">Only records linked to your signed-in patient account appear here. Select a record to verify its sealed integrity or open its QR code.</p>
+                <p id="patient-records-status" class="mt-4 text-sm text-slate-300" role="status">Loading your records…</p>
+            </div>
+            <div id="patient-records-container" class="grid grid-cols-1 lg:grid-cols-2 gap-4"></div>
+        </section>
 
         <!-- ========================================== -->
         <!-- TAB 1: CLINICAL RECORDS & BLOCKCHAIN SEALING -->
@@ -183,6 +197,7 @@
                                 <th class="px-4 py-3">Patient</th>
                                 <th class="px-4 py-3">Hospital / Doctor</th>
                                 <th class="px-4 py-3">Diagnosis</th>
+                                <th class="px-4 py-3">Vitals</th>
                                 <th class="px-4 py-3">On-Chain SHA-256 Hash</th>
                                 <th class="px-4 py-3">Status</th>
                                 <th class="px-4 py-3 text-right">Actions</th>
@@ -300,14 +315,6 @@
                         </button>
                     </div>
 
-                    <!-- Viva Examiner Tamper Demonstration Button -->
-                    <div class="pt-4 border-t border-slate-800">
-                        <span class="text-xs font-bold text-rose-400 uppercase tracking-wide block mb-1">Security & Integrity Audit:</span>
-                        <p class="text-xs text-slate-400 mb-3">Simulate an unauthorized clinical modification to evaluate blockchain tamper-detection:</p>
-                        <button onclick="triggerTamperSimulation()" class="w-full py-2 bg-rose-950 hover:bg-rose-900 text-rose-300 border border-rose-800 font-semibold rounded-lg text-xs transition flex items-center justify-center gap-2">
-                            <span>⚠️ Simulate Record Tampering (Integrity Test)</span>
-                        </button>
-                    </div>
                 </div>
 
                 <!-- Verification Output Results -->
@@ -371,9 +378,12 @@
                         <h3 class="text-lg font-bold text-white">Run Local Federated Learning Simulation</h3>
                         <p class="text-xs text-slate-400">Uses the Synthea synthetic EHR ZIP from Downloads when present, splitting patients into three virtual edge nodes. Per-patient DP-SGD clips and noises gradients; CKKS encrypts updates for sample-weighted FedAvg. Model parameters are homomorphically encrypted via CKKS before transmission, and exact metrics are not DP.</p>
                     </div>
-                    <button onclick="triggerFLRound()" id="btn-trigger-fl" class="px-5 py-2.5 bg-gradient-to-r from-purple-600 to-cyan-600 hover:from-purple-500 hover:to-cyan-500 text-white font-bold rounded-lg text-sm transition flex items-center gap-2">
+                    <div class="flex gap-2 flex-wrap">
+                        <button onclick="verifyFLUpdates()" class="px-4 py-2.5 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-cyan-300 font-semibold rounded-lg text-sm">🔍 Verify FL updates</button>
+                        <button onclick="triggerFLRound()" id="btn-trigger-fl" class="px-5 py-2.5 bg-gradient-to-r from-purple-600 to-cyan-600 hover:from-purple-500 hover:to-cyan-500 text-white font-bold rounded-lg text-sm transition flex items-center gap-2">
                         <span>🚀 Start FL Training Round</span>
                     </button>
+                    </div>
                 </div>
 
                 <div class="bg-slate-950 rounded-lg p-4 border border-slate-800 text-xs font-mono space-y-2 text-slate-300 max-h-56 overflow-y-auto" id="fl-log-terminal">
@@ -441,18 +451,19 @@
 
             <div class="space-y-3 text-xs">
                 <div>
-                    <label class="block font-semibold text-slate-400 mb-1">Patient Name</label>
-                    <input type="text" id="modal-patient-name" value="Aswin Krishna" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-white">
+                    <label class="block font-semibold text-slate-400 mb-1">Registered Patient</label>
+                    <select id="modal-patient-id" required class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-white"></select>
                 </div>
                 <div>
                     <label class="block font-semibold text-slate-400 mb-1">Hospital / Clinic</label>
-                    <input type="text" id="modal-hospital-name" value="Metro Health General Hospital" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-white">
+                    <input type="text" id="modal-hospital-name" value="Assigned from doctor account" readonly class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-slate-400">
                 </div>
                 <div>
                     <label class="block font-semibold text-slate-400 mb-1">Clinical Diagnosis</label>
                     <input type="text" id="modal-diagnosis" value="Cardiovascular Routine Screening - Normal Sinus" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-white">
                 </div>
                 <div class="grid grid-cols-2 gap-3">
+                    <div><label class="block font-semibold text-slate-400 mb-1">Age (years)</label><input type="number" id="modal-age" min="0" max="120" value="48" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-white"></div>
                     <div>
                         <label class="block font-semibold text-slate-400 mb-1">Systolic BP</label>
                         <input type="number" id="modal-bp" value="122" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-white">
@@ -461,6 +472,9 @@
                         <label class="block font-semibold text-slate-400 mb-1">Cholesterol (mg/dl)</label>
                         <input type="number" id="modal-chol" value="195" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-white">
                     </div>
+                    <div><label class="block font-semibold text-slate-400 mb-1">Heart rate (bpm)</label><input type="number" id="modal-hr" min="20" max="250" value="72" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-white"></div>
+                    <div><label class="block font-semibold text-slate-400 mb-1">Blood glucose (mg/dL)</label><input type="number" id="modal-glucose" min="0" max="1000" value="95" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-white"></div>
+                    <div><label class="block font-semibold text-slate-400 mb-1">Oxygen saturation (%)</label><input type="number" id="modal-spo2" min="0" max="100" value="98" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-white"></div>
                 </div>
             </div>
 
@@ -495,12 +509,12 @@
         let currentUser = null;
         const ROLE_TABS = {
             doctor: ['tab-doctor', 'tab-predict', 'tab-verify'],
-            patient: ['tab-verify'],
-            admin: ['tab-predict', 'tab-verify', 'tab-fl', 'tab-blockchain']
+            patient: ['tab-patient'],
+            admin: ['tab-fl', 'tab-blockchain']
         };
         const ROLE_DEFAULT_TAB = {
             doctor: 'tab-doctor',
-            patient: 'tab-verify',
+            patient: 'tab-patient',
             admin: 'tab-fl'
         };
 
@@ -590,8 +604,7 @@
                 sessionToken = data.token;
                 sessionStorage.setItem('securehealth_token', sessionToken);
                 applyRoleAccess(data.user);
-                fetchRecords();
-                if (data.user.role === 'admin') fetchBlocks();
+                loadRoleDashboard(data.user);
             } catch (error) {
                 errorBox.textContent = error.message;
                 errorBox.classList.remove('hidden');
@@ -608,8 +621,7 @@
                 if (!response.ok) throw new Error('Session expired');
                 const data = await response.json();
                 applyRoleAccess(data.user);
-                fetchRecords();
-                if (data.user.role === 'admin') fetchBlocks();
+                loadRoleDashboard(data.user);
             } catch {
                 sessionToken = '';
                 currentUser = null;
@@ -631,7 +643,7 @@
             const allowed = ROLE_TABS[currentUser?.role] || [];
             if (!currentUser || !allowed.includes(tabId)) return false;
 
-            ['tab-doctor', 'tab-predict', 'tab-verify', 'tab-fl', 'tab-blockchain'].forEach(id => {
+            ['tab-doctor', 'tab-patient', 'tab-predict', 'tab-verify', 'tab-fl', 'tab-blockchain'].forEach(id => {
                 const panel = document.getElementById(id);
                 panel.classList.add('hidden');
                 panel.style.display = 'none';
@@ -646,6 +658,7 @@
             });
             const activeNav = {
                 'tab-doctor': 'nav-doctor',
+                'tab-patient': 'nav-patient',
                 'tab-predict': 'nav-predict',
                 'tab-verify': 'nav-verify',
                 'tab-fl': 'nav-fl',
@@ -654,6 +667,8 @@
             document.getElementById(activeNav).classList.add('border-cyan-500', 'text-cyan-400');
             document.getElementById(activeNav).classList.remove('border-transparent', 'text-slate-400');
 
+            if (tabId === 'tab-patient') fetchPatientRecords();
+            if (tabId === 'tab-fl') fetchFLStatus();
             if (tabId === 'tab-blockchain') fetchBlocks();
             return true;
         }
@@ -662,7 +677,7 @@
             if (!user || !ROLE_TABS[user.role]) throw new Error('The signed-in account has no valid portal role.');
             currentUser = user;
             const allowed = new Set(ROLE_TABS[user.role]);
-            ['tab-doctor', 'tab-predict', 'tab-verify', 'tab-fl', 'tab-blockchain'].forEach(tabId => {
+            ['tab-doctor', 'tab-patient', 'tab-predict', 'tab-verify', 'tab-fl', 'tab-blockchain'].forEach(tabId => {
                 const isAllowed = allowed.has(tabId);
                 const panel = document.getElementById(tabId);
                 const nav = document.getElementById('nav-' + tabId.slice(4));
@@ -677,6 +692,12 @@
             showTab(ROLE_DEFAULT_TAB[user.role]);
         }
 
+        function loadRoleDashboard(user) {
+            if (user.role === 'doctor') { fetchRecords(); fetchDoctorPatients(); }
+            if (user.role === 'patient') fetchPatientRecords();
+            if (user.role === 'admin') fetchFLStatus();
+        }
+
         async function signOut() {
             try { await apiFetch(`${API_BASE}/api/auth/logout`, { method: 'POST' }); } catch {}
             sessionToken = '';
@@ -686,6 +707,106 @@
         }
 
         // Fetch and display EHR records
+        async function fetchPatientRecords() {
+            const status = document.getElementById('patient-records-status');
+            const container = document.getElementById('patient-records-container');
+            status.textContent = 'Loading your private records…';
+            container.replaceChildren();
+            try {
+                const response = await apiFetch(`${API_BASE}/api/ehr/list`);
+                const data = await response.json();
+                if (!response.ok) throw new Error(data.message || 'Could not load your records');
+                const records = Array.isArray(data.records) ? data.records : [];
+                status.textContent = records.length
+                    ? `${records.length} record(s) are linked to your account.`
+                    : 'No records are linked to your account yet. Your doctor can add a record after your visit.';
+
+                records.forEach(record => {
+                    const card = document.createElement('article');
+                    card.className = 'bg-slate-900 border border-slate-800 rounded-xl p-5 shadow space-y-3';
+
+                    const title = document.createElement('h3');
+                    title.className = 'text-lg font-bold text-white';
+                    title.textContent = record.diagnosis || 'Clinical record';
+                    card.appendChild(title);
+
+                    const meta = document.createElement('p');
+                    meta.className = 'text-xs text-slate-400';
+                    meta.textContent = `Record ${record.record_uuid} · ${record.created_at || 'Date unavailable'}`;
+                    card.appendChild(meta);
+
+                    const clinician = document.createElement('p');
+                    clinician.className = 'text-sm text-slate-300';
+                    clinician.textContent = `Doctor: ${record.doctor_name || 'Not specified'} · Hospital: ${record.hospital_name || 'Not specified'}`;
+                    card.appendChild(clinician);
+
+                    const metrics = document.createElement('dl');
+                    metrics.className = 'grid grid-cols-2 gap-2 border-t border-slate-800 pt-3 text-xs';
+                    const labels = { age: 'Age', resting_bp: 'Blood pressure (mm Hg)', cholesterol: 'Cholesterol (mg/dL)', heart_rate: 'Heart rate (bpm)', max_hr: 'Maximum heart rate (bpm)', blood_glucose: 'Blood glucose (mg/dL)', oxygen_saturation: 'Oxygen saturation (%)' };
+                    Object.entries(record.clinical_metrics || {}).forEach(([key, value]) => {
+                        const item = document.createElement('div');
+                        const label = document.createElement('dt');
+                        label.className = 'text-slate-500';
+                        label.textContent = labels[key] || key.replaceAll('_', ' ');
+                        const reading = document.createElement('dd');
+                        reading.className = 'text-slate-200';
+                        reading.textContent = String(value);
+                        item.append(label, reading);
+                        metrics.appendChild(item);
+                    });
+                    card.appendChild(metrics);
+
+                    const result = document.createElement('p');
+                    result.className = 'text-sm text-slate-300';
+                    result.setAttribute('role', 'status');
+                    card.appendChild(result);
+
+                    const actions = document.createElement('div');
+                    actions.className = 'flex flex-wrap gap-2';
+                    const verifyButton = document.createElement('button');
+                    verifyButton.className = 'px-3 py-2 rounded-lg bg-cyan-700 hover:bg-cyan-600 text-sm font-semibold text-white';
+                    verifyButton.textContent = 'Verify my record';
+                    verifyButton.addEventListener('click', () => verifyPatientRecord(record.record_uuid, result));
+                    actions.appendChild(verifyButton);
+
+                    if (record.qr_code_url) {
+                        const qrButton = document.createElement('button');
+                        qrButton.className = 'px-3 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-sm text-cyan-300 border border-slate-700';
+                        qrButton.textContent = 'View QR code';
+                        qrButton.addEventListener('click', () => viewQRCode(record.qr_code_url, record.record_uuid));
+                        actions.appendChild(qrButton);
+                    }
+                    card.appendChild(actions);
+                    container.appendChild(card);
+                });
+            } catch (error) {
+                status.textContent = error.message || 'Could not load your records.';
+                container.replaceChildren();
+            }
+        }
+
+        async function verifyPatientRecord(recordUuid, resultElement) {
+            resultElement.textContent = 'Checking the sealed record…';
+            try {
+                const response = await apiFetch(`${API_BASE}/api/verify/record`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ record_uuid: recordUuid })
+                });
+                const data = await response.json();
+                if (!response.ok || !data.success) throw new Error(data.message || 'Verification was denied');
+                resultElement.textContent = data.is_authentic
+                    ? 'Verified: record contents match the sealed hash.'
+                    : 'Alert: record contents do not match the sealed hash.';
+                resultElement.className = data.is_authentic
+                    ? 'text-sm text-emerald-400'
+                    : 'text-sm text-rose-400';
+            } catch (error) {
+                resultElement.textContent = error.message || 'Verification failed.';
+                resultElement.className = 'text-sm text-rose-400';
+            }
+        }
+
         async function fetchRecords() {
             try {
                 const res = await apiFetch(`${API_BASE}/api/ehr/list`);
@@ -694,6 +815,8 @@
                 tbody.innerHTML = "";
 
                 data.records.forEach(r => {
+                    const metrics = r.clinical_metrics || {};
+                    const vitalSummary = Object.entries(metrics).map(([key, value]) => `${key.replaceAll('_', ' ')}: ${value}`).join(' · ') || 'No vitals recorded';
                     const tr = document.createElement('tr');
                     tr.className = "hover:bg-slate-800/40 transition";
                     tr.innerHTML = `
@@ -701,6 +824,7 @@
                         <td class="px-4 py-3 font-medium text-white">${r.patient_name || 'Aswin Krishna'}</td>
                         <td class="px-4 py-3 text-xs text-slate-400">${r.hospital_name}</td>
                         <td class="px-4 py-3 text-xs text-slate-200">${r.diagnosis}</td>
+                        <td class="px-4 py-3 text-xs text-slate-300">${vitalSummary}</td>
                         <td class="px-4 py-3 font-mono text-xs text-slate-400 truncate max-w-xs" title="${r.record_hash}">${r.record_hash.substring(0, 14)}...</td>
                         <td class="px-4 py-3">
                             <span class="inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full bg-emerald-950 text-emerald-400 border border-emerald-800">
@@ -720,6 +844,36 @@
                 });
             } catch (err) {
                 console.error("Failed to load EHR records", err);
+            }
+        }
+
+        async function fetchDoctorPatients() {
+            const select = document.getElementById('modal-patient-id');
+            try {
+                const response = await apiFetch(`${API_BASE}/api/ehr/patients`);
+                const data = await response.json();
+                if (!response.ok || !data.success) throw new Error(data.message || 'Could not load patients');
+                select.replaceChildren();
+                (data.patients || []).forEach(patient => {
+                    const option = document.createElement('option');
+                    option.value = patient.id;
+                    option.textContent = patient.name;
+                    select.appendChild(option);
+                });
+                if (!select.options.length) {
+                    const option = document.createElement('option');
+                    option.value = '';
+                    option.textContent = 'No registered patients at this hospital';
+                    select.appendChild(option);
+                    select.disabled = true;
+                } else select.disabled = false;
+            } catch (error) {
+                select.replaceChildren();
+                const option = document.createElement('option');
+                option.value = '';
+                option.textContent = error.message || 'Could not load patients';
+                select.appendChild(option);
+                select.disabled = true;
             }
         }
 
@@ -811,26 +965,40 @@
             verifyRecordAuthenticity(uuid);
         }
 
-        // Trigger Malicious Tamper for Viva Demo
-        async function triggerTamperSimulation() {
-            const uuid = document.getElementById('verify-uuid').value;
+        // Trigger Federated Learning Round
+        async function fetchFLStatus() {
             try {
-                const res = await apiFetch(`${API_BASE}/api/demo/tamper-record`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ record_uuid: uuid })
+                const response = await apiFetch(`${API_BASE}/api/fl/status`);
+                const data = await response.json();
+                if (!response.ok || !data.success) throw new Error(data.message || 'Could not load FL status');
+                const state = data.fl_state || {};
+                document.getElementById('fl-rounds-count').textContent = state.total_rounds ?? 0;
+                document.getElementById('fl-accuracy').textContent = state.current_accuracy == null ? '—' : `${state.current_accuracy}%`;
+                const terminal = document.getElementById('fl-log-terminal');
+                terminal.replaceChildren();
+                (state.history || []).slice().reverse().slice(0, 3).forEach(round => {
+                    appendFLLog(`Round ${round.round} · global model hash: ${round.global_model_hash || '—'}`, 'text-cyan-300');
+                    (round.node_updates || []).forEach(node => appendFLLog(`  ${node.hospital} · update hash: ${node.update_hash || '—'}`, 'text-slate-400'));
                 });
-                const data = await res.json();
-                alert(data.message);
-                // Immediately verify to show the red alarm!
-                verifyRecordAuthenticity(uuid);
-                fetchRecords();
-            } catch (err) {
-                alert("Tamper simulation failed: " + err);
+                if (!state.history?.length) appendFLLog('[*] No FL rounds yet. Start a round to create model updates.', 'text-cyan-400');
+            } catch (error) {
+                appendFLLog(`Could not load FL status: ${error.message || error}`, 'text-rose-400');
             }
         }
 
-        // Trigger Federated Learning Round
+        async function verifyFLUpdates() {
+            appendFLLog('[*] Checking submitted update hashes against the local demo ledger…', 'text-amber-400');
+            try {
+                const response = await apiFetch(`${API_BASE}/api/fl/verify`);
+                const data = await response.json();
+                if (!response.ok || !data.success) throw new Error(data.message || 'Verification failed');
+                appendFLLog(`Ledger verification: ${data.verified_rounds}/${data.total_rounds} rounds verified.`, data.verified_rounds === data.total_rounds ? 'text-emerald-400 font-bold' : 'text-amber-400');
+                (data.rounds || []).forEach(round => appendFLLog(`Round ${round.round}: nodes ${round.node_updates_match ? 'match' : 'MISMATCH'}, global model ${round.global_model_match ? 'matches' : 'MISMATCH'}`, round.verified ? 'text-emerald-400' : 'text-rose-400'));
+            } catch (error) {
+                appendFLLog(`FL verification failed: ${error.message || error}`, 'text-rose-400');
+            }
+        }
+
         async function triggerFLRound() {
             const btn = document.getElementById('btn-trigger-fl');
             btn.disabled = true;
@@ -864,6 +1032,7 @@
                 (lastRound?.node_updates || []).forEach((node) => appendFLLog(`   -> ${node.hospital}: ${node.samples} training rows; holdout ${node.local_accuracy}%`, 'text-slate-400'));
                 document.getElementById('fl-rounds-count').innerText = String(Number(document.getElementById('fl-rounds-count').innerText) + 1);
                 document.getElementById('fl-accuracy').innerText = `${result.final_accuracy}%`;
+                await fetchFLStatus();
             } catch (err) {
                 appendFLLog(`FL execution failed: ${err.message || err}`, 'text-rose-400');
             } finally {
@@ -877,24 +1046,25 @@
         function closeCreateModal() { document.getElementById('create-modal').classList.add('hidden'); }
 
         async function submitNewEHR() {
-            const patient_name = document.getElementById('modal-patient-name').value;
-            const hospital_name = document.getElementById('modal-hospital-name').value;
+            const patient_id = Number(document.getElementById('modal-patient-id').value);
             const diagnosis = document.getElementById('modal-diagnosis').value;
-            const bp = document.getElementById('modal-bp').value;
-            const chol = document.getElementById('modal-chol').value;
+            const clinical_metrics = {
+                age: Number(document.getElementById('modal-age').value),
+                resting_bp: Number(document.getElementById('modal-bp').value),
+                cholesterol: Number(document.getElementById('modal-chol').value),
+                heart_rate: Number(document.getElementById('modal-hr').value),
+                blood_glucose: Number(document.getElementById('modal-glucose').value),
+                oxygen_saturation: Number(document.getElementById('modal-spo2').value)
+            };
 
             try {
                 const res = await apiFetch(`${API_BASE}/api/ehr/create`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        patient_name,
-                        hospital_name,
-                        diagnosis,
-                        clinical_metrics: { resting_bp: bp, cholesterol: chol }
-                    })
+                    body: JSON.stringify({ patient_id, diagnosis, clinical_metrics })
                 });
                 const data = await res.json();
+                if (!res.ok || !data.success) throw new Error(data.message || 'Could not save record');
                 closeCreateModal();
                 fetchRecords();
                 viewQRCode(data.record.qr_code_url, data.record.record_uuid);
@@ -903,20 +1073,35 @@
             }
         }
 
-        function viewQRCode(qrUrl, uuid) {
-            document.getElementById('qr-modal-img').src = qrUrl;
-            document.getElementById('qr-modal-uuid').innerText = uuid;
-            document.getElementById('qr-modal').classList.remove('hidden');
+        let qrObjectUrl = null;
+
+        async function viewQRCode(qrUrl, uuid) {
+            try {
+                const response = await apiFetch(qrUrl);
+                if (!response.ok) throw new Error('QR code access is not allowed for this account');
+                const blob = await response.blob();
+                if (qrObjectUrl) URL.revokeObjectURL(qrObjectUrl);
+                qrObjectUrl = URL.createObjectURL(blob);
+                document.getElementById('qr-modal-img').src = qrObjectUrl;
+                document.getElementById('qr-modal-uuid').innerText = uuid;
+                document.getElementById('qr-modal').classList.remove('hidden');
+            } catch (error) {
+                alert(error.message || 'Could not load QR code');
+            }
         }
 
         function closeQRModal() {
             document.getElementById('qr-modal').classList.add('hidden');
+            document.getElementById('qr-modal-img').removeAttribute('src');
+            if (qrObjectUrl) {
+                URL.revokeObjectURL(qrObjectUrl);
+                qrObjectUrl = null;
+            }
         }
 
         // Fetch and render Blockchain Blocks
         async function fetchBlocks() {
             try {
-                fetchDbStatus();
                 const res = await apiFetch(`${API_BASE}/api/blockchain/blocks`);
                 const data = await res.json();
                 document.getElementById('bc-total-blocks').innerText = data.total_blocks;
@@ -1008,6 +1193,7 @@
         window.onload = function() {
             restoreSession();
             fetchDbStatus();
+        };
         };
     </script>
 </body>

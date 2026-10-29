@@ -6,11 +6,17 @@ export default function EHRManager({ hospitalName }) {
   const [patients, setPatients] = useState([]);
   const [showModal, setShowModal] = useState(false);
   const [selectedQR, setSelectedQR] = useState(null);
+  const [qrPreviewUrl, setQrPreviewUrl] = useState('');
+  const [qrPreviewError, setQrPreviewError] = useState('');
   const [formData, setFormData] = useState({
     patient_id: '3',
     diagnosis: 'Cardiovascular Assessment - Normal Sinus',
+    age: 48,
     resting_bp: 122,
     cholesterol: 195,
+    heart_rate: 72,
+    blood_glucose: 95,
+    oxygen_saturation: 98,
   });
 
   const fetchRecords = async () => {
@@ -33,6 +39,34 @@ export default function EHRManager({ hospitalName }) {
     }).catch((e) => console.error(e));
   }, []);
 
+  useEffect(() => {
+    if (!selectedQR?.qr_code_url) {
+      setQrPreviewUrl('');
+      setQrPreviewError('');
+      return undefined;
+    }
+    let active = true;
+    setQrPreviewError('');
+    apiFetch(selectedQR.qr_code_url).then(async (response) => {
+      if (!response.ok) throw new Error('QR access was denied');
+      const objectUrl = URL.createObjectURL(await response.blob());
+      if (!active) {
+        URL.revokeObjectURL(objectUrl);
+        return;
+      }
+      setQrPreviewUrl(objectUrl);
+    }).catch((err) => {
+      if (active) setQrPreviewError(err.message || 'Could not load QR code');
+    });
+    return () => {
+      active = false;
+      setQrPreviewUrl((previous) => {
+        if (previous) URL.revokeObjectURL(previous);
+        return '';
+      });
+    };
+  }, [selectedQR]);
+
   const handleCreate = async (e) => {
     e.preventDefault();
     try {
@@ -43,8 +77,12 @@ export default function EHRManager({ hospitalName }) {
           patient_id: Number(formData.patient_id),
           diagnosis: formData.diagnosis,
           clinical_metrics: {
-            resting_bp: formData.resting_bp,
-            cholesterol: formData.cholesterol
+            age: Number(formData.age),
+            resting_bp: Number(formData.resting_bp),
+            cholesterol: Number(formData.cholesterol),
+            heart_rate: Number(formData.heart_rate),
+            blood_glucose: Number(formData.blood_glucose),
+            oxygen_saturation: Number(formData.oxygen_saturation)
           }
         })
       });
@@ -92,6 +130,7 @@ export default function EHRManager({ hospitalName }) {
                 <th className="px-4 py-3">Patient</th>
                 <th className="px-4 py-3">Hospital</th>
                 <th className="px-4 py-3">Diagnosis</th>
+                <th className="px-4 py-3">Vitals</th>
                 <th className="px-4 py-3">SHA-256 Hash</th>
                 <th className="px-4 py-3">Status</th>
                 <th className="px-4 py-3 text-right">Actions</th>
@@ -104,6 +143,7 @@ export default function EHRManager({ hospitalName }) {
                   <td className="px-4 py-3 font-medium text-white">{r.patient_name || 'Patient'}</td>
                   <td className="px-4 py-3 text-xs text-slate-400">{r.hospital_name}</td>
                   <td className="px-4 py-3 text-xs text-slate-200">{r.diagnosis}</td>
+                  <td className="px-4 py-3 text-xs text-slate-300">{Object.entries(r.clinical_metrics || {}).map(([key, value]) => `${key.replaceAll('_', ' ')}: ${value}`).join(' · ') || 'No vitals recorded'}</td>
                   <td className="px-4 py-3 font-mono text-xs text-slate-400 truncate max-w-xs">{r.record_hash?.substring(0, 14)}...</td>
                   <td className="px-4 py-3">
                     <span className="inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full bg-emerald-950 text-emerald-400 border border-emerald-800">
@@ -154,6 +194,7 @@ export default function EHRManager({ hospitalName }) {
                 />
               </div>
               <div className="grid grid-cols-2 gap-3">
+                <div><label className="block font-semibold text-slate-400 mb-1">Age (years)</label><input type="number" min="0" max="120" value={formData.age} onChange={(e) => setFormData({ ...formData, age: e.target.value })} className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-white" /></div>
                 <div>
                   <label className="block font-semibold text-slate-400 mb-1">Resting BP (mm Hg)</label>
                   <input
@@ -172,6 +213,9 @@ export default function EHRManager({ hospitalName }) {
                     className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-white"
                   />
                 </div>
+                <div><label className="block font-semibold text-slate-400 mb-1">Heart rate (bpm)</label><input type="number" min="20" max="250" value={formData.heart_rate} onChange={(e) => setFormData({ ...formData, heart_rate: e.target.value })} className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-white" /></div>
+                <div><label className="block font-semibold text-slate-400 mb-1">Blood glucose (mg/dL)</label><input type="number" min="0" max="1000" value={formData.blood_glucose} onChange={(e) => setFormData({ ...formData, blood_glucose: e.target.value })} className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-white" /></div>
+                <div><label className="block font-semibold text-slate-400 mb-1">Oxygen saturation (%)</label><input type="number" min="0" max="100" value={formData.oxygen_saturation} onChange={(e) => setFormData({ ...formData, oxygen_saturation: e.target.value })} className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-white" /></div>
               </div>
               <div className="pt-3 border-t border-slate-800 flex justify-end gap-3">
                 <button
@@ -199,7 +243,7 @@ export default function EHRManager({ hospitalName }) {
           <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-sm w-full p-6 shadow-2xl text-center space-y-4">
             <h3 className="text-base font-bold text-white">Cryptographic QR Code</h3>
             <div className="p-4 bg-white rounded-xl inline-block shadow-lg mx-auto">
-              <img src={selectedQR.qr_code_url} alt="EHR QR" className="w-48 h-48 mx-auto" />
+              {qrPreviewUrl ? <img src={qrPreviewUrl} alt={`EHR QR for ${selectedQR.record_uuid}`} className="w-48 h-48 mx-auto" /> : <span className="text-sm text-slate-700">{qrPreviewError || 'Loading secure QR…'}</span>}
             </div>
             <p className="text-xs font-mono text-cyan-400">{selectedQR.record_uuid}</p>
             <p className="text-xs text-slate-400">

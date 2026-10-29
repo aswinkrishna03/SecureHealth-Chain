@@ -4,10 +4,16 @@ import EHRManager from './components/EHRManager';
 import RiskPredictor from './components/RiskPredictor';
 import QRVerifier from './components/QRVerifier';
 import AdminFLDashboard from './components/AdminFLDashboard';
+import PatientPortal from './components/PatientPortal';
 import { apiFetch } from './api';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState('doctor');
+  const ROLE_TABS = {
+    doctor: ['doctor', 'predict', 'verify'],
+    patient: ['patient'],
+    admin: ['fl']
+  };
   const [session, setSession] = useState(null);
   const [restoringSession, setRestoringSession] = useState(true);
   const [email, setEmail] = useState('doctor@securehealth.org');
@@ -60,7 +66,7 @@ export default function App() {
 
   useEffect(() => {
     if (session?.role === 'admin') setActiveTab('fl');
-    if (session?.role === 'patient') setActiveTab('verify');
+    if (session?.role === 'patient') setActiveTab('patient');
     if (session?.role === 'doctor') setActiveTab('doctor');
   }, [session?.role]);
 
@@ -78,7 +84,7 @@ export default function App() {
       sessionStorage.setItem('securehealth-token', data.token);
       sessionStorage.setItem('securehealth-user', JSON.stringify(data.user));
       setSession(data.user);
-      setActiveTab(data.user.role === 'admin' ? 'fl' : data.user.role === 'patient' ? 'verify' : 'doctor');
+      setActiveTab(data.user.role === 'admin' ? 'fl' : data.user.role === 'patient' ? 'patient' : 'doctor');
     } catch (err) { setError(err.message); }
     finally { setBusy(false); }
   };
@@ -106,6 +112,10 @@ export default function App() {
     sessionStorage.removeItem('securehealth-token');
     sessionStorage.removeItem('securehealth-user');
     setSession(null);
+  };
+
+  const changeRoleTab = (nextTab) => {
+    if (ROLE_TABS[session?.role]?.includes(nextTab)) setActiveTab(nextTab);
   };
 
   if (restoringSession) return (
@@ -136,13 +146,14 @@ export default function App() {
         user={session}
         onLogout={logout}
         activeTab={activeTab}
-        setActiveTab={setActiveTab}
+        setActiveTab={changeRoleTab}
       />
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-1 w-full">
         {activeTab === 'doctor' && session.role === 'doctor' && <EHRManager hospitalName={session.hospital_name} />}
-        {activeTab === 'predict' && session.role !== 'patient' && <RiskPredictor />}
-        {activeTab === 'verify' && <QRVerifier role={session.role} />}
+        {activeTab === 'predict' && session.role === 'doctor' && <RiskPredictor />}
+        {activeTab === 'verify' && session.role === 'doctor' && <QRVerifier role="doctor" />}
+        {activeTab === 'patient' && session.role === 'patient' && <PatientPortal />}
         {activeTab === 'fl' && session.role === 'admin' && <AdminFLDashboard />}
       </main>
 
