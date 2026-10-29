@@ -645,12 +645,16 @@
 
             ['tab-doctor', 'tab-patient', 'tab-predict', 'tab-verify', 'tab-fl', 'tab-blockchain'].forEach(id => {
                 const panel = document.getElementById(id);
-                panel.classList.add('hidden');
-                panel.style.display = 'none';
+                if (panel) {
+                    panel.classList.add('hidden');
+                    panel.style.display = 'none';
+                }
             });
             const activePanel = document.getElementById(tabId);
-            activePanel.classList.remove('hidden');
-            activePanel.style.display = '';
+            if (activePanel) {
+                activePanel.classList.remove('hidden');
+                activePanel.style.display = '';
+            }
 
             document.querySelectorAll('.tab-btn').forEach(btn => {
                 btn.classList.remove('border-cyan-500', 'text-cyan-400');
@@ -664,8 +668,11 @@
                 'tab-fl': 'nav-fl',
                 'tab-blockchain': 'nav-blockchain'
             }[tabId];
-            document.getElementById(activeNav).classList.add('border-cyan-500', 'text-cyan-400');
-            document.getElementById(activeNav).classList.remove('border-transparent', 'text-slate-400');
+            const activeNavEl = document.getElementById(activeNav);
+            if (activeNavEl) {
+                activeNavEl.classList.add('border-cyan-500', 'text-cyan-400');
+                activeNavEl.classList.remove('border-transparent', 'text-slate-400');
+            }
 
             if (tabId === 'tab-patient') fetchPatientRecords();
             if (tabId === 'tab-fl') fetchFLStatus();
@@ -681,14 +688,24 @@
                 const isAllowed = allowed.has(tabId);
                 const panel = document.getElementById(tabId);
                 const nav = document.getElementById('nav-' + tabId.slice(4));
-                panel.classList.toggle('hidden', !isAllowed);
-                nav.classList.toggle('hidden', !isAllowed);
-                // Inline display prevents layout utilities such as "flex" from revealing restricted tabs.
-                panel.style.display = isAllowed ? '' : 'none';
-                nav.style.display = isAllowed ? '' : 'none';
+                if (panel) {
+                    panel.classList.toggle('hidden', !isAllowed);
+                    panel.style.display = isAllowed ? '' : 'none';
+                }
+                if (nav) {
+                    nav.classList.toggle('hidden', !isAllowed);
+                    nav.style.display = isAllowed ? '' : 'none';
+                }
             });
-            document.getElementById('signed-in-user').textContent = user.name + ' · ' + user.role;
-            document.getElementById('login-overlay').classList.add('hidden');
+            const signedInUserEl = document.getElementById('signed-in-user');
+            if (signedInUserEl) {
+                signedInUserEl.textContent = user.name + ' · ' + user.role;
+            }
+            const overlay = document.getElementById('login-overlay');
+            if (overlay) {
+                overlay.classList.add('hidden');
+                overlay.style.display = 'none';
+            }
             showTab(ROLE_DEFAULT_TAB[user.role]);
         }
 
@@ -1193,7 +1210,6 @@
         window.onload = function() {
             restoreSession();
             fetchDbStatus();
-        };
         };
     </script>
 </body>

@@ -389,12 +389,13 @@ class SecureHealthHandler(http.server.BaseHTTPRequestHandler):
         if path == "/api/auth/login":
             email = body.get("email", "").strip().lower()
             password = body.get("password", "")
-            user = USERS_DB.get(email)
-            if not user or not verify_password(password, user["password_hash"]):
+            user = db_service.get_user_by_email(email)
+            if not user or not verify_password(password, user.get("password_hash", "")):
                 self.send_json(401, {"success": False, "message": "Invalid email or password"})
                 return
             token = secrets.token_urlsafe(32)
-            safe_user = {key: user[key] for key in ("id", "name", "email", "role", "hospital_name")}
+            safe_user = {key: user.get(key) for key in ("id", "name", "email", "role", "hospital_name")}
+            safe_user["hospital_name"] = safe_user.get("hospital_name") or "Metro Health General Hospital"
             SESSIONS[token] = {"user": safe_user, "expires_at": time.time() + 8 * 60 * 60}
             self.send_json(200, {
                 "success": True,
