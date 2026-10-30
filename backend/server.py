@@ -814,6 +814,7 @@ class SecureHealthHandler(http.server.BaseHTTPRequestHandler):
             training_result = {
                 "hospital_name": hosp,
                 "node_id": f"Hospital-Edge-{hosp.replace(' ', '-').lower()[:15]}",
+                "custom_records_count": len(local_records),
                 "samples_count": len(parsed_samples),
                 "epochs": epochs,
                 "epsilon": epsilon,

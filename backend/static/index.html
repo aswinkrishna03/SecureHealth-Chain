@@ -1097,6 +1097,8 @@
                 const data = await res.json();
                 if (!res.ok || !data.success) throw new Error(data.message || 'Local training failed');
 
+                appendLog(`[1/4] Extracted ${data.result.custom_records_count || 1} entered patient record(s) directly from hospital database.`, 'text-cyan-300 font-bold');
+                appendLog(`[*] Active local training batch: ${data.result.samples_count} patient vitals vectors (Age, BP, Chol, MaxHR, FBS, Angina).`, 'text-slate-300');
                 appendLog(`[2/4] Executing ${epochs} local epochs with Cross-Entropy Loss & Adam Optimizer...`, 'text-cyan-400');
                 appendLog(`[3/4] Gradient clipping applied (C = 1.0). Injected Gaussian DP Noise (ε = ${epsilon}, σ = ${data.result.noise_scale_sigma})...`, 'text-purple-400');
                 appendLog(`[4/4] Local Training Complete! Loss: ${data.result.local_loss} · Accuracy: ${data.result.local_accuracy}%`, 'text-emerald-400');
