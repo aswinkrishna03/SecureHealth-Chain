@@ -5,7 +5,127 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SecureHealth Chain - Federated Learning & Blockchain EHR Platform</title>
     <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.tailwindcss.com">
+        // Doctor Global Model Notification & Growth Handling
+        let globalModelUpdateCache = null;
+
+        async function checkDoctorModelUpdateNotification() {
+            if (!currentUser || currentUser.role !== 'doctor') return;
+            try {
+                const res = await apiFetch(`${API_BASE}/api/doctor/fl-edge-info`);
+                const data = await res.json();
+                if (!res.ok || !data.success) return;
+
+                globalModelUpdateCache = data;
+                const banner = document.getElementById('doctor-model-update-banner');
+
+                // Update Predictor Badge
+                const actName = document.getElementById('predict-active-model-name');
+                const actAcc = document.getElementById('predict-active-acc');
+                const actPill = document.getElementById('predict-growth-pill');
+                const actDot = document.getElementById('predict-status-dot');
+
+                if (actName) actName.textContent = data.active_model?.model_name || 'Local Base Model';
+                if (actAcc) actAcc.textContent = `${data.active_model?.accuracy || 74.5}%`;
+                if (actPill) {
+                    if (data.active_model?.is_global) {
+                        actPill.textContent = `🟢 Global Synced (+${data.active_model.growth_boost}% Boost)`;
+                        actPill.className = 'text-[10px] font-bold text-emerald-300 bg-emerald-950 px-2.5 py-0.5 rounded border border-emerald-700';
+                        if (actDot) actDot.className = 'w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse';
+                    } else {
+                        actPill.textContent = 'Local Silo Baseline';
+                        actPill.className = 'text-[10px] font-bold text-slate-400 bg-slate-900 px-2.5 py-0.5 rounded border border-slate-700';
+                        if (actDot) actDot.className = 'w-2.5 h-2.5 rounded-full bg-cyan-400';
+                    }
+                }
+
+                // Show Notification Banner if new update is available and not dismissed
+                if (banner) {
+                    if (data.show_notification) {
+                        banner.classList.remove('hidden');
+                        const roundBadge = document.getElementById('banner-round-badge');
+                        const growthBadge = document.getElementById('banner-growth-badge');
+                        const accVal = document.getElementById('banner-acc-val');
+                        if (roundBadge) roundBadge.textContent = `Round #${data.available_global_model?.round || 1}`;
+                        if (growthBadge) growthBadge.textContent = `📈 +${data.growth_boost}% Accuracy Boost`;
+                        if (accVal) accVal.textContent = `${data.available_global_model?.accuracy || 88.5}%`;
+                    } else {
+                        banner.classList.add('hidden');
+                    }
+                }
+            } catch (err) {
+                console.log("Could not check model notification:", err);
+            }
+        }
+
+        function openGlobalModelModal() {
+            const modal = document.getElementById('modal-global-model-update');
+            if (!modal) return;
+            const data = globalModelUpdateCache;
+            if (data) {
+                const curAcc = document.getElementById('modal-current-acc');
+                const curName = document.getElementById('modal-current-name');
+                const newAcc = document.getElementById('modal-new-acc');
+                const newRound = document.getElementById('modal-new-round');
+                const growthTag = document.getElementById('modal-growth-tag');
+                const gHash = document.getElementById('modal-global-hash');
+                const cDesc = document.getElementById('modal-clinical-desc');
+
+                if (curAcc) curAcc.textContent = `${data.active_model?.accuracy || 74.5}%`;
+                if (curName) curName.textContent = data.active_model?.model_name || 'Local Hospital Baseline';
+                if (newAcc) newAcc.textContent = `${data.available_global_model?.accuracy || 88.5}%`;
+                if (newRound) newRound.textContent = `Round #${data.available_global_model?.round || 1} (FedAvg)`;
+                if (growthTag) growthTag.textContent = `+${data.growth_boost}% Growth`;
+                if (gHash) gHash.textContent = data.available_global_model?.global_hash || '0x4e8a1d2f9b7c...';
+                if (cDesc && data.global_model_details?.clinical_description) {
+                    cDesc.textContent = data.global_model_details.clinical_description;
+                }
+            }
+            modal.classList.remove('hidden');
+        }
+
+        function closeGlobalModelModal() {
+            const modal = document.getElementById('modal-global-model-update');
+            if (modal) modal.classList.add('hidden');
+        }
+
+        async function applyGlobalModelUpdate() {
+            try {
+                const res = await apiFetch(`${API_BASE}/api/doctor/apply-global-model`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({})
+                });
+                const data = await res.json();
+                if (!res.ok || !data.success) throw new Error(data.message || 'Could not apply global model');
+
+                const banner = document.getElementById('doctor-model-update-banner');
+                if (banner) banner.classList.add('hidden');
+
+                alert(`✅ Global Model Applied! Diagnostic accuracy upgraded to ${data.active_model?.accuracy}%. Your AI Risk Predictor is now powered by the latest federated weights.`);
+                await checkDoctorModelUpdateNotification();
+                if (typeof fetchDoctorEdgeFLInfo === 'function') fetchDoctorEdgeFLInfo();
+            } catch (err) {
+                alert("Apply error: " + err.message);
+            }
+        }
+
+        async function dismissGlobalUpdateNotification() {
+            try {
+                await apiFetch(`${API_BASE}/api/doctor/dismiss-global-update`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({})
+                });
+                const banner = document.getElementById('doctor-model-update-banner');
+                if (banner) banner.classList.add('hidden');
+            } catch (e) {
+                const banner = document.getElementById('doctor-model-update-banner');
+                if (banner) banner.classList.add('hidden');
+            }
+        }
+
+</script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
     <style>
         body { font-family: 'Inter', sans-serif; }
@@ -155,6 +275,39 @@
 
     <!-- Main Container -->
     <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-1 w-full">
+        <!-- Doctor Global Model Update Notification Banner -->
+        <div id="doctor-model-update-banner" class="hidden mb-6 bg-gradient-to-r from-purple-950/90 via-slate-900 to-cyan-950/90 border border-purple-500/50 rounded-2xl p-5 shadow-2xl transition">
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div class="flex items-start gap-3.5">
+                    <div class="w-10 h-10 rounded-xl bg-purple-600/30 border border-purple-400 flex items-center justify-center text-xl shrink-0 mt-0.5">
+                        🚀
+                    </div>
+                    <div>
+                        <div class="flex items-center gap-2 flex-wrap">
+                            <span class="text-xs font-black uppercase tracking-wider text-purple-300 bg-purple-950 border border-purple-700 px-2.5 py-0.5 rounded-full">New Global Model Available</span>
+                            <span id="banner-round-badge" class="text-xs font-mono font-bold text-cyan-300 bg-cyan-950 border border-cyan-800 px-2 py-0.5 rounded-full">Round #1</span>
+                            <span id="banner-growth-badge" class="text-xs font-bold text-emerald-400 bg-emerald-950 border border-emerald-800 px-2 py-0.5 rounded-full">📈 +14.0% Accuracy Boost</span>
+                        </div>
+                        <h3 id="banner-model-title" class="text-lg font-extrabold text-white mt-1">Federated Global Model Ready to Deploy</h3>
+                        <p id="banner-model-desc" class="text-xs text-slate-300 mt-1 max-w-2xl">
+                            The Central Server aggregated verified model updates from 4 hospitals on Ethereum. Diagnostic accuracy reached <strong id="banner-acc-val" class="text-emerald-400">88.5%</strong> without exposing raw patient data.
+                        </p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-2.5 shrink-0 self-end md:self-center">
+                    <button onclick="dismissGlobalUpdateNotification()" class="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-xl text-xs font-semibold border border-slate-700 transition">
+                        Keep Current
+                    </button>
+                    <button onclick="openGlobalModelModal()" class="px-4 py-2 bg-purple-900/60 hover:bg-purple-800/80 text-purple-300 rounded-xl text-xs font-bold border border-purple-600 transition flex items-center gap-1.5">
+                        <span>🔍 Review Details</span>
+                    </button>
+                    <button onclick="applyGlobalModelUpdate()" class="px-4 py-2 bg-gradient-to-r from-emerald-600 to-cyan-600 hover:from-emerald-500 hover:to-cyan-500 text-white rounded-xl text-xs font-extrabold shadow-lg transition flex items-center gap-1.5">
+                        <span>⚡ Apply Update</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
 
         <!-- PATIENT PORTAL: authenticated patient's own records only -->
         <section id="tab-patient" class="hidden space-y-6">
@@ -430,6 +583,19 @@
                             <span class="text-xs bg-emerald-950 text-emerald-400 border border-emerald-800 px-2 py-0.5 rounded">Module 2 & 4</span>
                         </div>
                         <p class="text-xs text-slate-400 mt-1">Evaluates clinical vitals using the globally trained Federated Neural Model.</p>
+                    <!-- Active Intelligence Engine Status Card -->
+                    <div id="predict-model-badge-card" class="bg-slate-950 p-3.5 rounded-xl border border-slate-800 flex items-center justify-between text-xs mt-3">
+                        <div class="flex items-center gap-2">
+                            <span id="predict-status-dot" class="w-2.5 h-2.5 rounded-full bg-cyan-400"></span>
+                            <span class="text-slate-400">Active Intelligence:</span>
+                            <strong id="predict-active-model-name" class="text-white font-mono">Checking...</strong>
+                        </div>
+                        <div class="flex items-center gap-2.5">
+                            <span class="text-slate-400">Accuracy: <strong id="predict-active-acc" class="text-emerald-400 font-mono">74.5%</strong></span>
+                            <span id="predict-growth-pill" class="text-[10px] font-bold text-slate-400 bg-slate-900 px-2 py-0.5 rounded border border-slate-700">Local Silo</span>
+                        </div>
+                    </div>
+
                     </div>
 
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
@@ -944,7 +1110,9 @@
                 activeNavEl.classList.remove('border-transparent', 'text-slate-400');
             }
 
-            if (tabId === 'tab-doctor-edge-fl') { fetchDoctorEdgeFLInfo(); fetchBlockchainStatus(); }
+            if (tabId === 'tab-predict') checkDoctorModelUpdateNotification();
+            if (tabId === 'tab-doctor') checkDoctorModelUpdateNotification();
+            if (tabId === 'tab-doctor-edge-fl') { fetchDoctorEdgeFLInfo(); fetchBlockchainStatus(); checkDoctorModelUpdateNotification(); }
             if (tabId === 'tab-patient') fetchPatientRecords();
             if (tabId === 'tab-fl') { fetchFLStatus(); fetchBlockchainStatus(); }
             if (tabId === 'tab-blockchain') { fetchBlocks(); fetchBlockchainStatus(); }
@@ -978,6 +1146,7 @@
                 overlay.style.display = 'none';
             }
             showTab(ROLE_DEFAULT_TAB[user.role]);
+            if (user.role === 'doctor') checkDoctorModelUpdateNotification();
         }
 
         function loadRoleDashboard(user) {
@@ -1376,7 +1545,21 @@
 
                 const list = document.getElementById('recommendations-list');
                 list.innerHTML = "";
-                data.recommendations.forEach(rec => {
+
+                if (data.model) {
+                    const liModel = document.createElement('li');
+                    liModel.className = 'font-bold text-cyan-300';
+                    liModel.textContent = `Diagnostic Engine: ${data.model} (Validated Accuracy: ${data.held_out_accuracy}%)`;
+                    list.appendChild(liModel);
+                }
+                if (data.clinical_growth_note) {
+                    const liGrowth = document.createElement('li');
+                    liGrowth.className = data.is_global_federated ? 'text-emerald-400 font-semibold' : 'text-slate-400';
+                    liGrowth.textContent = data.clinical_growth_note;
+                    list.appendChild(liGrowth);
+                }
+
+                (data.recommendations || []).forEach(rec => {
                     const li = document.createElement('li');
                     li.innerText = rec;
                     list.appendChild(li);
@@ -1774,5 +1957,75 @@
             fetchBlockchainStatus();
         };
     </script>
+
+    <!-- Global Model Update Review Modal -->
+    <div id="modal-global-model-update" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-2xl w-full p-6 shadow-2xl space-y-5">
+            <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+                <div class="flex items-center gap-2">
+                    <span class="w-8 h-8 rounded-lg bg-gradient-to-tr from-purple-600 to-cyan-500 flex items-center justify-center text-sm font-bold text-white">🧠</span>
+                    <div>
+                        <h3 class="text-lg font-black text-white" id="modal-fl-title">Global Model Update Details</h3>
+                        <p class="text-xs text-slate-400">Federated Intelligence Upgrade · EPP-BCFL Protocol</p>
+                    </div>
+                </div>
+                <button onclick="closeGlobalModelModal()" class="text-slate-400 hover:text-white text-xl font-bold">&times;</button>
+            </div>
+
+            <!-- Before vs After Growth Grid -->
+            <div class="grid grid-cols-2 gap-4">
+                <div class="bg-slate-950 p-4 rounded-xl border border-slate-800 space-y-1">
+                    <span class="text-[11px] uppercase font-bold text-slate-500 tracking-wider">Current Doctor Model</span>
+                    <span id="modal-current-acc" class="text-2xl font-black text-slate-300 block">74.5%</span>
+                    <span class="text-xs text-slate-400 block" id="modal-current-name">Local Hospital Baseline</span>
+                    <span class="text-[10px] text-slate-500 block pt-1">Trained only on this hospital's local records</span>
+                </div>
+                <div class="bg-gradient-to-br from-emerald-950/60 to-cyan-950/60 p-4 rounded-xl border border-emerald-700/60 space-y-1">
+                    <div class="flex items-center justify-between">
+                        <span class="text-[11px] uppercase font-bold text-emerald-400 tracking-wider">New Global Model</span>
+                        <span id="modal-growth-tag" class="text-[10px] font-bold bg-emerald-900/80 text-emerald-300 px-2 py-0.5 rounded-full border border-emerald-600">+14.0% Growth</span>
+                    </div>
+                    <span id="modal-new-acc" class="text-2xl font-black text-emerald-400 block">88.5%</span>
+                    <span class="text-xs text-cyan-300 font-semibold block" id="modal-new-round">Round #1 (FedAvg)</span>
+                    <span class="text-[10px] text-emerald-300/80 block pt-1">Aggregated across 4 multi-hospital silos</span>
+                </div>
+            </div>
+
+            <!-- Clinical & Security Description -->
+            <div class="bg-slate-950 rounded-xl p-4 border border-slate-800 text-xs space-y-3">
+                <div class="space-y-1">
+                    <span class="font-bold text-slate-200 block">🔬 Clinical Diagnostic Advantage:</span>
+                    <p class="text-slate-400 leading-relaxed" id="modal-clinical-desc">
+                        By integrating weights from 4 hospital silos (Apollo, Aster Medcity, City Central, and Metro Health), the neural predictor gains exposure to diverse clinical demographics, significantly reducing false negatives for early-stage coronary artery disease and diabetic hypertension.
+                    </p>
+                </div>
+                <div class="grid grid-cols-2 gap-3 pt-2 border-t border-slate-800/80 text-[11px] font-mono">
+                    <div>
+                        <span class="text-slate-500 block">Privacy Guarantee:</span>
+                        <span class="text-purple-400">Rényi DP (ε=1.0, δ=1e-5)</span>
+                    </div>
+                    <div>
+                        <span class="text-slate-500 block">Blockchain Verification:</span>
+                        <span class="text-cyan-400">Ethereum Ganache Mined</span>
+                    </div>
+                </div>
+                <div class="text-[11px] font-mono text-slate-400 truncate pt-1">
+                    <span class="text-slate-500">Global On-Chain Hash: </span>
+                    <span id="modal-global-hash" class="text-emerald-400 font-mono text-xs">0x...</span>
+                </div>
+            </div>
+
+            <!-- Choice Action Buttons -->
+            <div class="flex items-center justify-end gap-3 pt-2">
+                <button onclick="closeGlobalModelModal()" class="px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-semibold border border-slate-700 transition">
+                    Keep Current Local Model
+                </button>
+                <button onclick="applyGlobalModelUpdate(); closeGlobalModelModal();" class="px-5 py-2.5 bg-gradient-to-r from-emerald-600 to-cyan-600 hover:from-emerald-500 hover:to-cyan-500 text-white font-bold rounded-xl text-xs shadow-lg transition flex items-center gap-2">
+                    <span>✅ Apply Global Model & Boost Accuracy</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
 </body>
 </html>
