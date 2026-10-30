@@ -12,6 +12,7 @@ env/
 venv/
 ENV/
 build/
+!blockchain/build/
 develop-eggs/
 dist/
 downloads/

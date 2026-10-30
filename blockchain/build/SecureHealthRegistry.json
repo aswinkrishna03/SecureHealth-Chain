@@ -1,0 +1,133 @@
+{
+  "contractName": "SecureHealthRegistry",
+  "abi": [
+    {
+      "inputs": [],
+      "stateMutability": "nonpayable",
+      "type": "constructor"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "name": "recordUUID",
+          "type": "string"
+        },
+        {
+          "indexed": true,
+          "name": "recordHash",
+          "type": "bytes32"
+        },
+        {
+          "indexed": true,
+          "name": "doctor",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "name": "timestamp",
+          "type": "uint256"
+        }
+      ],
+      "name": "EHRRegistered",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "name": "roundNumber",
+          "type": "uint256"
+        },
+        {
+          "indexed": false,
+          "name": "modelHash",
+          "type": "bytes32"
+        },
+        {
+          "indexed": true,
+          "name": "nodeAddress",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "name": "timestamp",
+          "type": "uint256"
+        }
+      ],
+      "name": "ModelUpdateSubmitted",
+      "type": "event"
+    },
+    {
+      "inputs": [
+        {
+          "name": "_recordUUID",
+          "type": "string"
+        },
+        {
+          "name": "_recordHash",
+          "type": "bytes32"
+        }
+      ],
+      "name": "registerEHR",
+      "outputs": [
+        {
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "name": "_recordUUID",
+          "type": "string"
+        },
+        {
+          "name": "_incomingHash",
+          "type": "bytes32"
+        }
+      ],
+      "name": "verifyEHR",
+      "outputs": [
+        {
+          "name": "isValid",
+          "type": "bool"
+        },
+        {
+          "name": "timestamp",
+          "type": "uint256"
+        },
+        {
+          "name": "recordedBy",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "name": "_round",
+          "type": "uint256"
+        },
+        {
+          "name": "_modelHash",
+          "type": "bytes32"
+        }
+      ],
+      "name": "submitModelUpdate",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    }
+  ],
+  "defaultAddress": "0x5FbDB2315678afecb367f032d93F642f64180aa3",
+  "network": "Ethereum Ganache (Port 7545 / 8545)",
+  "compiler": "solc 0.8.19"
+}
