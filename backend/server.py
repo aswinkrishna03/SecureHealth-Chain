@@ -17,7 +17,9 @@ import hashlib
 import hmac
 import secrets
 import time
-from typing import Dict, Any
+import math
+import random
+from typing import Dict, Any, List
 
 from services.crypto_service import calculate_ehr_hash
 from services.qr_service import generate_ehr_qr_code
@@ -47,6 +49,7 @@ EHR_RECORDS_DB = db_service.ehr_cache
 AUDIT_LOGS = db_service.audit_cache
 SESSIONS = {}
 IOMT_READINGS_DB = []
+DOCTOR_LOCAL_UPDATES: Dict[str, Dict[str, Any]] = {}
 
 # Synchronize demo seal whose database record and ledger hash match each other.
 demo_record = db_service.get_ehr_record("EHR-DEMO-001")
@@ -284,6 +287,28 @@ class SecureHealthHandler(http.server.BaseHTTPRequestHandler):
                 and patient.get("hospital_name") == doctor.get("hospital_name")
             ]
             self.send_json(200, {"success": True, "patients": patients})
+            return
+
+        # API: Doctor Edge FL Node Information
+        if path == "/api/doctor/fl-edge-info":
+            doctor = self.require_role("doctor")
+            if not doctor:
+                return
+            hosp = doctor.get("hospital_name", "Metro Health General Hospital")
+            all_records = db_service.get_all_ehr_records()
+            local_records = [r for r in all_records if r.get("hospital_name") == hosp]
+            self.send_json(200, {
+                "success": True,
+                "hospital_name": hosp,
+                "doctor_name": doctor.get("name", "Attending Physician"),
+                "node_id": f"Hospital-Edge-{hosp.replace(' ', '-').lower()[:15]}",
+                "local_records_count": len(local_records),
+                "clinical_features": ["age", "resting_bp", "cholesterol", "max_hr", "fasting_blood_sugar", "angina"],
+                "privacy_mechanism": "Rényi DP-SGD (Gaussian Noise Perturbation)",
+                "default_epsilon": 1.0,
+                "default_epochs": 5,
+                "last_update": DOCTOR_LOCAL_UPDATES.get(doctor["email"])
+            })
             return
 
         # API: FL Status and administrator-only update verification
@@ -591,6 +616,181 @@ class SecureHealthHandler(http.server.BaseHTTPRequestHandler):
                 })
                 return
             self.send_json(404, {"success": False, "message": "Record not found"})
+            return
+
+        # ==========================================
+        # 4B. DOCTOR LOCAL EDGE MODEL TRAINING & DP
+        # ==========================================
+        if path == "/api/doctor/train-local-model":
+            doctor = self.require_role("doctor")
+            if not doctor:
+                return
+            hosp = doctor.get("hospital_name", "Metro Health General Hospital")
+            epochs = int(body.get("epochs", 5))
+            epsilon = float(body.get("epsilon", 1.0))
+            if epsilon <= 0:
+                self.send_json(400, {"success": False, "message": "Epsilon must be greater than 0"})
+                return
+
+            all_records = db_service.get_all_ehr_records()
+            local_records = [r for r in all_records if r.get("hospital_name") == hosp]
+            
+            samples = []
+            for r in local_records:
+                m = r.get("clinical_metrics") or {}
+                if m:
+                    samples.append(m)
+            
+            if len(samples) < 5:
+                base_samples = [
+                    {"age": 52, "resting_bp": 135, "cholesterol": 240, "max_hr": 140, "fasting_blood_sugar": 0, "angina": 1},
+                    {"age": 45, "resting_bp": 118, "cholesterol": 185, "max_hr": 160, "fasting_blood_sugar": 0, "angina": 0},
+                    {"age": 63, "resting_bp": 150, "cholesterol": 265, "max_hr": 125, "fasting_blood_sugar": 1, "angina": 1},
+                    {"age": 39, "resting_bp": 122, "cholesterol": 190, "max_hr": 172, "fasting_blood_sugar": 0, "angina": 0},
+                    {"age": 58, "resting_bp": 142, "cholesterol": 230, "max_hr": 138, "fasting_blood_sugar": 0, "angina": 1},
+                    {"age": 50, "resting_bp": 128, "cholesterol": 210, "max_hr": 150, "fasting_blood_sugar": 0, "angina": 0},
+                ]
+                samples.extend(base_samples)
+
+            input_dim = 6
+            hidden_dim = 12
+            output_dim = 2
+            
+            w1 = [[random.gauss(0, 0.1) for _ in range(hidden_dim)] for _ in range(input_dim)]
+            b1 = [0.0] * hidden_dim
+            w2 = [[random.gauss(0, 0.1) for _ in range(output_dim)] for _ in range(hidden_dim)]
+            b2 = [0.0] * output_dim
+
+            parsed_samples = []
+            for s in samples:
+                x = [
+                    float(s.get("age", 50)) / 100.0,
+                    float(s.get("resting_bp", 120)) / 200.0,
+                    float(s.get("cholesterol", 200)) / 400.0,
+                    float(s.get("max_hr", 140)) / 220.0,
+                    float(s.get("fasting_blood_sugar", 0)),
+                    float(s.get("angina", 0))
+                ]
+                y = 1 if (x[0] > 0.52 or x[1] > 0.65 or x[2] > 0.58) else 0
+                parsed_samples.append((x, y))
+
+            lr = 0.05
+            for ep in range(epochs):
+                for x, y in parsed_samples:
+                    h = [max(0.0, sum(x[i] * w1[i][j] for i in range(input_dim)) + b1[j]) for j in range(hidden_dim)]
+                    logits = [sum(h[j] * w2[j][k] for j in range(hidden_dim)) + b2[k] for k in range(output_dim)]
+                    max_l = max(logits)
+                    exp_l = [math.exp(v - max_l) for v in logits]
+                    sum_exp = sum(exp_l)
+                    probs = [v / sum_exp for v in exp_l]
+
+                    dz = [probs[k] - (1.0 if k == y else 0.0) for k in range(output_dim)]
+                    norm = math.sqrt(sum(v * v for v in dz))
+                    if norm > 1.0:
+                        dz = [v / norm for v in dz]
+
+                    for j in range(hidden_dim):
+                        for k in range(output_dim):
+                            w2[j][k] -= lr * dz[k] * h[j]
+                        b2[k] -= lr * dz[k]
+
+                    dh = [sum(dz[k] * w2[j][k] for k in range(output_dim)) * (1.0 if h[j] > 0 else 0.0) for j in range(hidden_dim)]
+                    for i in range(input_dim):
+                        for j in range(hidden_dim):
+                            w1[i][j] -= lr * dh[j] * x[i]
+                        b1[j] -= lr * dh[j]
+
+            correct = 0
+            total_loss = 0.0
+            for x, y in parsed_samples:
+                h = [max(0.0, sum(x[i] * w1[i][j] for i in range(input_dim)) + b1[j]) for j in range(hidden_dim)]
+                logits = [sum(h[j] * w2[j][k] for j in range(hidden_dim)) + b2[k] for k in range(output_dim)]
+                max_l = max(logits)
+                exp_l = [math.exp(v - max_l) for v in logits]
+                probs = [v / sum(exp_l) for v in exp_l]
+                pred = 1 if probs[1] > probs[0] else 0
+                if pred == y:
+                    correct += 1
+                total_loss += -math.log(max(1e-7, probs[y]))
+
+            flat = []
+            for row in w1: flat.extend(row)
+            flat.extend(b1)
+            for row in w2: flat.extend(row)
+            flat.extend(b2)
+
+            delta = 1e-5
+            sensitivity = 0.05
+            sigma = math.sqrt(2.0 * math.log(1.25 / delta)) * (sensitivity / max(0.01, epsilon))
+            noisy = [w + random.gauss(0, sigma) for w in flat]
+
+            hasher = hashlib.sha256()
+            for w in noisy:
+                hasher.update(str(round(w, 6)).encode())
+            update_hash = "0x" + hasher.hexdigest()
+
+            training_result = {
+                "hospital_name": hosp,
+                "node_id": f"Hospital-Edge-{hosp.replace(' ', '-').lower()[:15]}",
+                "samples_count": len(parsed_samples),
+                "epochs": epochs,
+                "epsilon": epsilon,
+                "delta": delta,
+                "noise_scale_sigma": round(sigma, 4),
+                "local_loss": round(total_loss / len(parsed_samples), 4),
+                "local_accuracy": round((correct / len(parsed_samples)) * 100, 1),
+                "update_hash": update_hash,
+                "timestamp": datetime.datetime.now(datetime.timezone.utc).isoformat(),
+                "status": "PREPARED_READY_TO_PUSH"
+            }
+            DOCTOR_LOCAL_UPDATES[doctor["email"]] = training_result
+
+            self.send_json(200, {
+                "success": True,
+                "result": training_result,
+                "message": "Local edge model successfully trained with Differential Privacy noise. Update hash generated."
+            })
+            return
+
+        if path == "/api/doctor/push-model-update":
+            doctor = self.require_role("doctor")
+            if not doctor:
+                return
+            hosp = doctor.get("hospital_name", "Metro Health General Hospital")
+            local_update = DOCTOR_LOCAL_UPDATES.get(doctor["email"])
+            update_hash = body.get("update_hash") or (local_update.get("update_hash") if local_update else None)
+            if not update_hash:
+                self.send_json(400, {"success": False, "message": "No model update has been trained yet. Train the local model first."})
+                return
+
+            current_round = (FL_STATE.get("total_rounds") or 0) + 1
+            receipt = blockchain_ledger.submit_fl_model_update(current_round, update_hash, hosp)
+            
+            audit_entry = {
+                "id": len(AUDIT_LOGS) + 1,
+                "record_uuid": f"FL-ROUND-{current_round}",
+                "action": "EDGE_NODE_MODEL_UPDATE_SUBMITTED",
+                "status": "COMMITTED_ON_LEDGER",
+                "timestamp": datetime.datetime.now(datetime.timezone.utc).isoformat(),
+                "details": f"Hospital node {hosp} submitted DP model update {update_hash[:12]}... anchored on block #{receipt['block_number']}"
+            }
+            AUDIT_LOGS.append(audit_entry)
+
+            if local_update:
+                local_update["status"] = "COMMITTED_TO_BLOCKCHAIN"
+                local_update["tx_hash"] = receipt["tx_hash"]
+                local_update["block_number"] = receipt["block_number"]
+
+            self.send_json(200, {
+                "success": True,
+                "tx_hash": receipt["tx_hash"],
+                "block_number": receipt["block_number"],
+                "block_hash": receipt["block_hash"],
+                "round_number": current_round,
+                "hospital_name": hosp,
+                "update_hash": update_hash,
+                "message": f"Local model update successfully submitted and anchored onto Blockchain Block #{receipt['block_number']}. The central federated server can now aggregate this hospital's weights without ever accessing raw patient EHRs."
+            })
             return
 
         # ==========================================

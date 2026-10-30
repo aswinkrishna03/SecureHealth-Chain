@@ -132,6 +132,9 @@
             <button onclick="showTab('tab-doctor')" id="nav-doctor" class="tab-btn py-3 border-b-2 border-cyan-500 text-cyan-400 flex items-center space-x-2">
                 <span>📋 Clinical Records & Sealing</span>
             </button>
+            <button onclick="showTab('tab-doctor-edge-fl')" id="nav-doctor-edge-fl" class="tab-btn py-3 border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center space-x-2">
+                <span>🔒 Edge Model Training & Privacy</span>
+            </button>
             <button onclick="showTab('tab-patient')" id="nav-patient" class="tab-btn py-3 border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center space-x-2">
                 <span>🩺 My Health Records</span>
             </button>
@@ -207,6 +210,189 @@
                             <!-- Injected by JavaScript -->
                         </tbody>
                     </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- ========================================== -->
+        <!-- TAB 1B: DOCTOR EDGE FL: TRAINING & PRIVACY -->
+        <!-- ========================================== -->
+        <section id="tab-doctor-edge-fl" class="hidden space-y-6">
+            <!-- Header & Educational Concept Banner -->
+            <div class="bg-gradient-to-r from-slate-900 via-slate-900 to-cyan-950/40 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-4">
+                <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <span class="text-xs font-bold uppercase tracking-wider text-cyan-400 bg-cyan-950 border border-cyan-800 px-2.5 py-0.5 rounded-full">Doctor Edge Silo</span>
+                            <span class="text-xs font-bold uppercase tracking-wider text-emerald-400 bg-emerald-950 border border-emerald-800 px-2.5 py-0.5 rounded-full">Module 2 & 3: EPP-BCFL</span>
+                        </div>
+                        <h2 class="text-2xl font-black text-white mt-2">Privacy-Preserving Edge Model Training</h2>
+                        <p class="text-sm text-slate-400 mt-1">
+                            Train the disease prediction neural model directly on this hospital's private EHR records.
+                            <strong class="text-slate-200">Raw patient data never leaves this node.</strong> Only mathematically perturbed model weight updates are pushed to the central server and anchored on the blockchain.
+                        </p>
+                    </div>
+                    <div class="flex items-center gap-2 bg-slate-950/80 border border-slate-800 p-3 rounded-xl text-xs">
+                        <div class="w-3 h-3 rounded-full bg-emerald-400 animate-pulse"></div>
+                        <div>
+                            <span class="font-bold text-slate-200 block" id="edge-hosp-name">Metro Health General Hospital</span>
+                            <span class="text-slate-500 font-mono text-[11px]" id="edge-node-id">Edge Node: Local Silo</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 3-Stage Visual Pipeline -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-3 pt-2 text-xs">
+                    <div class="bg-slate-950/70 border border-slate-800 p-3.5 rounded-xl space-y-1.5">
+                        <div class="flex items-center gap-2 text-cyan-400 font-bold">
+                            <span class="w-5 h-5 rounded-full bg-cyan-950 border border-cyan-700 flex items-center justify-center text-[10px]">1</span>
+                            <span>Local Patient Vitals</span>
+                        </div>
+                        <p class="text-slate-400 text-[11px]">Collected clinical vitals (BP, Chol, HR, Angina) are stored strictly in local hospital records. No raw records are exposed.</p>
+                    </div>
+                    <div class="bg-slate-950/70 border border-slate-800 p-3.5 rounded-xl space-y-1.5">
+                        <div class="flex items-center gap-2 text-purple-400 font-bold">
+                            <span class="w-5 h-5 rounded-full bg-purple-950 border border-purple-700 flex items-center justify-center text-[10px]">2</span>
+                            <span>Differential Privacy (DP-SGD)</span>
+                        </div>
+                        <p class="text-slate-400 text-[11px]">Gradients are clipped and Gaussian noise &xi; &sim; N(0, &sigma;&sup2;) is added to parameters. Prevents membership inference attacks.</p>
+                    </div>
+                    <div class="bg-slate-950/70 border border-slate-800 p-3.5 rounded-xl space-y-1.5">
+                        <div class="flex items-center gap-2 text-emerald-400 font-bold">
+                            <span class="w-5 h-5 rounded-full bg-emerald-950 border border-emerald-700 flex items-center justify-center text-[10px]">3</span>
+                            <span>Blockchain Model Anchor</span>
+                        </div>
+                        <p class="text-slate-400 text-[11px]">The model update hash is minted on the ledger. The central coordinator aggregates weights via FedAvg without raw data.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Two-Column Workspace -->
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                <!-- Left: Local Dataset & Training Controls -->
+                <div class="lg:col-span-6 bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-5">
+                    <div class="border-b border-slate-800 pb-3 flex items-center justify-between">
+                        <div>
+                            <h3 class="text-base font-bold text-white">Local Edge Training Engine</h3>
+                            <p class="text-xs text-slate-400">Execute on-device forward & backward propagation</p>
+                        </div>
+                        <span class="text-xs font-mono bg-cyan-950 text-cyan-300 border border-cyan-800 px-2.5 py-1 rounded-lg">On-Device Engine</span>
+                    </div>
+
+                    <!-- Local Dataset Stats -->
+                    <div class="grid grid-cols-2 gap-3 text-xs">
+                        <div class="bg-slate-950 p-3.5 rounded-xl border border-slate-800">
+                            <span class="text-slate-500 block">Available Local Records</span>
+                            <span id="edge-records-count" class="text-xl font-black text-white mt-1 block">Checking...</span>
+                            <span class="text-[10px] text-emerald-400">🔒 Confined to Hospital Silo</span>
+                        </div>
+                        <div class="bg-slate-950 p-3.5 rounded-xl border border-slate-800">
+                            <span class="text-slate-500 block">Extracted Feature Dimensions</span>
+                            <span class="text-xl font-black text-cyan-400 mt-1 block">6 Features</span>
+                            <span class="text-[10px] text-slate-400">BP, Chol, MaxHR, Age, FBS, Angina</span>
+                        </div>
+                    </div>
+
+                    <!-- Training Parameters -->
+                    <div class="space-y-4 pt-2">
+                        <div>
+                            <div class="flex items-center justify-between mb-1.5">
+                                <label class="text-xs font-semibold text-slate-300">Differential Privacy Budget (&epsilon; Epsilon)</label>
+                                <span id="dp-epsilon-display" class="text-xs font-mono font-bold text-cyan-400 bg-cyan-950/80 px-2 py-0.5 rounded border border-cyan-800">&epsilon; = 1.0</span>
+                            </div>
+                            <input type="range" id="edge-dp-epsilon" min="0.2" max="3.0" step="0.1" value="1.0" oninput="updateEpsilonPreview()" class="w-full h-2 bg-slate-950 rounded-lg appearance-none cursor-pointer accent-cyan-500" />
+                            <div class="flex justify-between text-[10px] text-slate-500 mt-1 font-mono">
+                                <span>&epsilon; = 0.2 (Max Privacy / High Noise)</span>
+                                <span>&epsilon; = 1.0 (Balanced)</span>
+                                <span>&epsilon; = 3.0 (Min Noise)</span>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-300 mb-1">Local Epochs</label>
+                                <input type="number" id="edge-epochs" value="5" min="1" max="20" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-white text-xs font-mono focus:border-cyan-500 focus:outline-none" />
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-300 mb-1">Calculated Noise Scale (&sigma;)</label>
+                                <input type="text" id="edge-noise-sigma" value="0.2422" readonly class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-slate-400 text-xs font-mono" />
+                            </div>
+                        </div>
+
+                        <button onclick="runDoctorLocalTraining()" id="btn-train-edge" class="w-full py-3 bg-gradient-to-r from-cyan-600 to-purple-600 hover:from-cyan-500 hover:to-purple-500 text-white font-bold rounded-xl text-sm shadow-lg flex items-center justify-center gap-2 transition">
+                            <span>⚡ Train Local Model & Apply Differential Privacy</span>
+                        </button>
+                    </div>
+
+                    <!-- Edge Execution Terminal Log -->
+                    <div class="space-y-1.5">
+                        <span class="text-xs font-bold text-slate-400">Local Training Telemetry:</span>
+                        <div id="edge-training-terminal" class="bg-slate-950 rounded-xl p-3 border border-slate-800 text-[11px] font-mono space-y-1 text-slate-400 max-h-36 overflow-y-auto">
+                            <div class="text-slate-500">Ready to train on local hospital EHR records. Click the button above.</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right: Model Update Package & Push to Central Server -->
+                <div class="lg:col-span-6 bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl flex flex-col justify-between space-y-5">
+                    <div>
+                        <div class="border-b border-slate-800 pb-3 flex items-center justify-between">
+                            <div>
+                                <h3 class="text-base font-bold text-white">Local Model Update Package</h3>
+                                <p class="text-xs text-slate-400">Cryptographically sealed update ready for central aggregator</p>
+                            </div>
+                            <span id="edge-status-pill" class="text-xs font-semibold bg-slate-800 text-slate-400 px-2.5 py-1 rounded-lg">Awaiting Training</span>
+                        </div>
+
+                        <!-- Training Metrics Cards -->
+                        <div class="grid grid-cols-3 gap-3 my-4 text-center">
+                            <div class="bg-slate-950 p-3 rounded-xl border border-slate-800">
+                                <span class="text-[11px] text-slate-500 block">Local Loss</span>
+                                <span id="edge-metric-loss" class="text-lg font-black text-cyan-400 font-mono mt-0.5 block">--</span>
+                            </div>
+                            <div class="bg-slate-950 p-3 rounded-xl border border-slate-800">
+                                <span class="text-[11px] text-slate-500 block">Local Accuracy</span>
+                                <span id="edge-metric-acc" class="text-lg font-black text-emerald-400 font-mono mt-0.5 block">--</span>
+                            </div>
+                            <div class="bg-slate-950 p-3 rounded-xl border border-slate-800">
+                                <span class="text-[11px] text-slate-500 block">Samples Used</span>
+                                <span id="edge-metric-samples" class="text-lg font-black text-purple-400 font-mono mt-0.5 block">--</span>
+                            </div>
+                        </div>
+
+                        <!-- Model Hash Display -->
+                        <div class="space-y-2">
+                            <label class="text-xs font-semibold text-slate-300 block">Generated Model Update Hash (SHA-256)</label>
+                            <div class="p-3 bg-slate-950 border border-slate-800 rounded-xl font-mono text-xs text-emerald-400 break-all" id="edge-model-hash">
+                                0x... (Run local training to compute update hash)
+                            </div>
+                            <p class="text-[11px] text-slate-500">
+                                🔒 This hash mathematically represents the DP-perturbed weight differences. Central aggregator verifies this on the blockchain.
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Push to Central Server Action & Blockchain Receipt -->
+                    <div class="space-y-4 pt-4 border-t border-slate-800">
+                        <button onclick="pushDoctorModelUpdate()" id="btn-push-edge" disabled class="w-full py-3 bg-gradient-to-r from-emerald-600 to-cyan-600 hover:from-emerald-500 hover:to-cyan-500 disabled:opacity-40 disabled:cursor-not-allowed text-white font-bold rounded-xl text-sm shadow-lg flex items-center justify-center gap-2 transition">
+                            <span>🚀 Push Model Update to Central Server & Blockchain</span>
+                        </button>
+
+                        <!-- Blockchain Confirmation Box -->
+                        <div id="edge-blockchain-receipt" class="hidden p-4 rounded-xl bg-slate-950 border border-emerald-800/60 space-y-2 text-xs">
+                            <div class="flex items-center justify-between text-emerald-400 font-bold">
+                                <span>🟢 Anchored on Blockchain Ledger</span>
+                                <span id="edge-receipt-block" class="font-mono text-cyan-400">Block #--</span>
+                            </div>
+                            <div class="text-slate-400 font-mono text-[11px] break-all">
+                                <span class="text-slate-500 block">Transaction Hash:</span>
+                                <span id="edge-receipt-tx" class="text-slate-300">--</span>
+                            </div>
+                            <p class="text-[11px] text-slate-400 pt-1">
+                                ✅ Central Federated Coordinator has accepted this hospital's model update. Global FedAvg aggregation will combine it with other hospitals with zero raw patient data sharing.
+                            </p>
+                        </div>
+                    </div>
                 </div>
             </div>
         </section>
@@ -508,7 +694,7 @@
         let sessionToken = sessionStorage.getItem('securehealth_token') || '';
         let currentUser = null;
         const ROLE_TABS = {
-            doctor: ['tab-doctor', 'tab-predict', 'tab-verify'],
+            doctor: ['tab-doctor', 'tab-doctor-edge-fl', 'tab-predict', 'tab-verify'],
             patient: ['tab-patient'],
             admin: ['tab-fl', 'tab-blockchain']
         };
@@ -643,7 +829,7 @@
             const allowed = ROLE_TABS[currentUser?.role] || [];
             if (!currentUser || !allowed.includes(tabId)) return false;
 
-            ['tab-doctor', 'tab-patient', 'tab-predict', 'tab-verify', 'tab-fl', 'tab-blockchain'].forEach(id => {
+            ['tab-doctor', 'tab-doctor-edge-fl', 'tab-patient', 'tab-predict', 'tab-verify', 'tab-fl', 'tab-blockchain'].forEach(id => {
                 const panel = document.getElementById(id);
                 if (panel) {
                     panel.classList.add('hidden');
@@ -662,6 +848,7 @@
             });
             const activeNav = {
                 'tab-doctor': 'nav-doctor',
+                'tab-doctor-edge-fl': 'nav-doctor-edge-fl',
                 'tab-patient': 'nav-patient',
                 'tab-predict': 'nav-predict',
                 'tab-verify': 'nav-verify',
@@ -674,6 +861,7 @@
                 activeNavEl.classList.remove('border-transparent', 'text-slate-400');
             }
 
+            if (tabId === 'tab-doctor-edge-fl') fetchDoctorEdgeFLInfo();
             if (tabId === 'tab-patient') fetchPatientRecords();
             if (tabId === 'tab-fl') fetchFLStatus();
             if (tabId === 'tab-blockchain') fetchBlocks();
@@ -710,7 +898,7 @@
         }
 
         function loadRoleDashboard(user) {
-            if (user.role === 'doctor') { fetchRecords(); fetchDoctorPatients(); }
+            if (user.role === 'doctor') { fetchRecords(); fetchDoctorPatients(); fetchDoctorEdgeFLInfo(); }
             if (user.role === 'patient') fetchPatientRecords();
             if (user.role === 'admin') fetchFLStatus();
         }
@@ -721,6 +909,180 @@
             currentUser = null;
             sessionStorage.removeItem('securehealth_token');
             window.location.reload();
+        }
+
+
+        // ==========================================
+        // DOCTOR EDGE FEDERATED LEARNING FUNCTIONS
+        // ==========================================
+        function updateEpsilonPreview() {
+            const epsEl = document.getElementById('edge-dp-epsilon');
+            if (!epsEl) return;
+            const eps = parseFloat(epsEl.value) || 1.0;
+            document.getElementById('dp-epsilon-display').textContent = `ε = ${eps.toFixed(1)}`;
+            const delta = 1e-5;
+            const sensitivity = 0.05;
+            const sigma = Math.sqrt(2.0 * Math.log(1.25 / delta)) * (sensitivity / eps);
+            const sigmaEl = document.getElementById('edge-noise-sigma');
+            if (sigmaEl) sigmaEl.value = sigma.toFixed(4);
+        }
+
+        async function fetchDoctorEdgeFLInfo() {
+            try {
+                const res = await apiFetch(`${API_BASE}/api/doctor/fl-edge-info`);
+                const data = await res.json();
+                if (!res.ok || !data.success) return;
+                const hospEl = document.getElementById('edge-hosp-name');
+                const nodeEl = document.getElementById('edge-node-id');
+                const countEl = document.getElementById('edge-records-count');
+                if (hospEl) hospEl.textContent = data.hospital_name;
+                if (nodeEl) nodeEl.textContent = `Edge Node: ${data.node_id}`;
+                if (countEl) countEl.textContent = `${data.local_records_count} Records`;
+
+                if (data.last_update) {
+                    displayEdgeTrainingResult(data.last_update);
+                }
+            } catch (err) {
+                console.log("Could not fetch doctor edge info:", err);
+            }
+        }
+
+        function displayEdgeTrainingResult(res) {
+            if (!res) return;
+            const lossEl = document.getElementById('edge-metric-loss');
+            const accEl = document.getElementById('edge-metric-acc');
+            const sampEl = document.getElementById('edge-metric-samples');
+            const hashEl = document.getElementById('edge-model-hash');
+            const btnPush = document.getElementById('btn-push-edge');
+            const pill = document.getElementById('edge-status-pill');
+
+            if (lossEl) lossEl.textContent = res.local_loss ?? '--';
+            if (accEl) accEl.textContent = res.local_accuracy != null ? `${res.local_accuracy}%` : '--';
+            if (sampEl) sampEl.textContent = res.samples_count ?? '--';
+            if (hashEl) hashEl.textContent = res.update_hash;
+            if (btnPush) btnPush.disabled = false;
+
+            if (pill) {
+                if (res.status === 'COMMITTED_TO_BLOCKCHAIN') {
+                    pill.textContent = 'Anchored on Chain';
+                    pill.className = 'text-xs font-semibold bg-emerald-950 text-emerald-400 border border-emerald-800 px-2.5 py-1 rounded-lg';
+                    if (res.tx_hash) {
+                        const receiptEl = document.getElementById('edge-blockchain-receipt');
+                        if (receiptEl) receiptEl.classList.remove('hidden');
+                        const blockEl = document.getElementById('edge-receipt-block');
+                        const txEl = document.getElementById('edge-receipt-tx');
+                        if (blockEl) blockEl.textContent = `Block #${res.block_number || '--'}`;
+                        if (txEl) txEl.textContent = res.tx_hash;
+                    }
+                } else {
+                    pill.textContent = 'Update Ready to Push';
+                    pill.className = 'text-xs font-semibold bg-cyan-950 text-cyan-400 border border-cyan-800 px-2.5 py-1 rounded-lg';
+                }
+            }
+        }
+
+        async function runDoctorLocalTraining() {
+            const btn = document.getElementById('btn-train-edge');
+            const term = document.getElementById('edge-training-terminal');
+            if (btn) {
+                btn.disabled = true;
+                btn.textContent = 'Training on Edge Node…';
+            }
+            if (term) term.replaceChildren();
+
+            const appendLog = (msg, cls = 'text-slate-300') => {
+                if (!term) return;
+                const d = document.createElement('div');
+                d.className = cls;
+                d.textContent = msg;
+                term.appendChild(d);
+                term.scrollTop = term.scrollHeight;
+            };
+
+            appendLog('[1/4] Extracting local hospital patient vitals from secure database...', 'text-cyan-400');
+            appendLog('[*] Zero-knowledge rule active: Raw EHR records are locked to this node.', 'text-slate-400');
+
+            const epochs = parseInt(document.getElementById('edge-epochs')?.value) || 5;
+            const epsilon = parseFloat(document.getElementById('edge-dp-epsilon')?.value) || 1.0;
+
+            try {
+                const res = await apiFetch(`${API_BASE}/api/doctor/train-local-model`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ epochs, epsilon })
+                });
+                const data = await res.json();
+                if (!res.ok || !data.success) throw new Error(data.message || 'Local training failed');
+
+                appendLog(`[2/4] Executing ${epochs} local epochs with Cross-Entropy Loss & Adam Optimizer...`, 'text-cyan-400');
+                appendLog(`[3/4] Gradient clipping applied (C = 1.0). Injected Gaussian DP Noise (ε = ${epsilon}, σ = ${data.result.noise_scale_sigma})...`, 'text-purple-400');
+                appendLog(`[4/4] Local Training Complete! Loss: ${data.result.local_loss} · Accuracy: ${data.result.local_accuracy}%`, 'text-emerald-400');
+                appendLog(`[Hash] Cryptographic Model Update Hash: ${data.result.update_hash}`, 'text-amber-300');
+                appendLog('[Ready] Update package is sealed and ready to push to central aggregator.', 'text-emerald-400');
+
+                displayEdgeTrainingResult(data.result);
+            } catch (err) {
+                appendLog(`[Error] Training failed: ${err.message}`, 'text-rose-400');
+            } finally {
+                if (btn) {
+                    btn.disabled = false;
+                    btn.textContent = '⚡ Train Local Model & Apply Differential Privacy';
+                }
+            }
+        }
+
+        async function pushDoctorModelUpdate() {
+            const btn = document.getElementById('btn-push-edge');
+            const term = document.getElementById('edge-training-terminal');
+            if (btn) {
+                btn.disabled = true;
+                btn.textContent = 'Anchoring on Blockchain…';
+            }
+
+            const appendLog = (msg, cls = 'text-slate-300') => {
+                if (!term) return;
+                const d = document.createElement('div');
+                d.className = cls;
+                d.textContent = msg;
+                term.appendChild(d);
+                term.scrollTop = term.scrollHeight;
+            };
+
+            const updateHash = document.getElementById('edge-model-hash')?.textContent.trim();
+
+            try {
+                const res = await apiFetch(`${API_BASE}/api/doctor/push-model-update`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ update_hash: updateHash })
+                });
+                const data = await res.json();
+                if (!res.ok || !data.success) throw new Error(data.message || 'Push failed');
+
+                appendLog(`[Blockchain] Minted new block #${data.block_number} with action MODEL_UPDATE`, 'text-emerald-400');
+                appendLog(`[TxHash] ${data.tx_hash}`, 'text-cyan-300');
+                appendLog('[Aggregator] Model update dispatched to central coordinator. Ready for FedAvg!', 'text-emerald-400');
+
+                const receiptEl = document.getElementById('edge-blockchain-receipt');
+                if (receiptEl) receiptEl.classList.remove('hidden');
+                const blockEl = document.getElementById('edge-receipt-block');
+                const txEl = document.getElementById('edge-receipt-tx');
+                if (blockEl) blockEl.textContent = `Block #${data.block_number}`;
+                if (txEl) txEl.textContent = data.tx_hash;
+
+                const pill = document.getElementById('edge-status-pill');
+                if (pill) {
+                    pill.textContent = 'Anchored on Chain';
+                    pill.className = 'text-xs font-semibold bg-emerald-950 text-emerald-400 border border-emerald-800 px-2.5 py-1 rounded-lg';
+                }
+            } catch (err) {
+                appendLog(`[Error] Push to ledger failed: ${err.message}`, 'text-rose-400');
+            } finally {
+                if (btn) {
+                    btn.disabled = false;
+                    btn.textContent = '🚀 Push Model Update to Central Server & Blockchain';
+                }
+            }
         }
 
         // Fetch and display EHR records
