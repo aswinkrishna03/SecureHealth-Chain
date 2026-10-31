@@ -5,7 +5,37 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SecureHealth Chain - Federated Learning & Blockchain EHR Platform</title>
     <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        samsung: {
+                            50: '#eef6ff',
+                            100: '#d9ecff',
+                            200: '#bcddff',
+                            300: '#8ec7ff',
+                            400: '#59a7ff',
+                            500: '#0381fe', // Samsung One UI Signature Digital Blue
+                            600: '#0066d6',
+                            700: '#004fa8',
+                            800: '#03448c',
+                            900: '#1428a0', // Samsung Corporate Navy
+                            950: '#0a164f'
+                        },
+                        navy: {
+                            800: '#162238',
+                            850: '#121A2D',
+                            900: '#0D1524',
+                            950: '#0A0F1D'
+                        }
+                    }
+                }
+            }
+        };
+    </script>
+    <script>
         // Doctor Global Model Notification & Growth Handling
         let globalModelUpdateCache = null;
 
@@ -35,7 +65,7 @@
                     } else {
                         actPill.textContent = 'Local Silo Baseline';
                         actPill.className = 'text-[10px] font-bold text-slate-400 bg-slate-900 px-2.5 py-0.5 rounded border border-slate-700';
-                        if (actDot) actDot.className = 'w-2.5 h-2.5 rounded-full bg-cyan-400';
+                        if (actDot) actDot.className = 'w-2.5 h-2.5 rounded-full bg-[#0381FE]';
                     }
                 }
 
@@ -128,20 +158,24 @@
 </script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
     <style>
-        body { font-family: 'Inter', sans-serif; }
+        body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #0A0F1D; }
         .mono { font-family: 'JetBrains Mono', monospace; }
-        .glow-emerald { box-shadow: 0 0 25px rgba(16, 185, 129, 0.25); }
-        .glow-red { box-shadow: 0 0 25px rgba(239, 68, 68, 0.35); }
-        .glow-cyan { box-shadow: 0 0 25px rgba(6, 182, 212, 0.25); }
+        .glow-samsung { box-shadow: 0 4px 25px rgba(3, 129, 254, 0.35); }
+        .glow-blue { box-shadow: 0 4px 20px rgba(3, 129, 254, 0.25); }
+        .glow-emerald { box-shadow: 0 4px 20px rgba(16, 185, 129, 0.25); }
+        .glow-red { box-shadow: 0 4px 20px rgba(239, 68, 68, 0.35); }
+        .glow-cyan { box-shadow: 0 4px 20px rgba(3, 129, 254, 0.25); }
+        .samsung-card { background-color: #121A2D; border: 1px solid #1E2C48; }
+        .samsung-gradient { background: linear-gradient(135deg, #0381FE 0%, #1428A0 100%); }
     </style>
 </head>
-<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col antialiased selection:bg-cyan-500 selection:text-white">
+<body class="bg-[#0A0F1D] text-slate-100 min-h-screen flex flex-col antialiased selection:bg-[#0381FE] selection:text-white">
 
-    <div id="login-overlay" class="fixed inset-0 z-[100] bg-slate-950/95 backdrop-blur-md flex items-center justify-center p-4">
-        <div class="w-full max-w-md bg-slate-900 border border-slate-800 rounded-2xl p-8 shadow-2xl space-y-6">
+    <div id="login-overlay" class="fixed inset-0 z-[100] bg-[#0A0F1D]/95 backdrop-blur-md flex items-center justify-center p-4">
+        <div class="w-full max-w-md bg-[#121A2D] border border-[#1E2C48] rounded-3xl p-8 shadow-2xl space-y-6 glow-samsung">
             <!-- Brand & Security Header -->
             <div class="text-center space-y-2">
-                <div class="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-tr from-cyan-600 to-emerald-500 shadow-lg glow-cyan text-2xl mx-auto">
+                <div class="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-tr from-[#0381FE] to-[#1428A0] shadow-lg glow-samsung text-2xl mx-auto">
                     ⚕️
                 </div>
                 <h1 class="text-2xl font-black tracking-tight text-white">SecureHealth Platform</h1>
@@ -153,8 +187,8 @@
             </div>
 
             <!-- Login / Register Switcher -->
-            <div class="flex bg-slate-950 p-1 rounded-xl border border-slate-800 text-xs font-semibold">
-                <button type="button" onclick="showAuthTab('signin')" id="tab-auth-signin" class="flex-1 py-2 rounded-lg bg-cyan-600 text-white transition">Sign In</button>
+            <div class="flex bg-[#0D1524] p-1 rounded-xl border border-[#1E2C48] text-xs font-semibold">
+                <button type="button" onclick="showAuthTab('signin')" id="tab-auth-signin" class="flex-1 py-2 rounded-lg bg-[#0381FE] text-white shadow-sm transition">Sign In</button>
                 <button type="button" onclick="showAuthTab('register')" id="tab-auth-register" class="flex-1 py-2 rounded-lg text-slate-400 hover:text-white transition">Register Patient</button>
             </div>
 
@@ -162,23 +196,23 @@
             <form id="form-signin" onsubmit="signIn(event)" class="space-y-4">
                 <div>
                     <label class="block text-xs font-semibold text-slate-300 mb-1">Healthcare ID or Email</label>
-                    <input id="login-email" type="email" required autocomplete="username" placeholder="doctor@securehealth.org" class="w-full bg-slate-950 border border-slate-700 focus:border-cyan-500 rounded-lg px-3.5 py-2.5 text-white text-sm focus:outline-none transition" />
+                    <input id="login-email" type="email" required autocomplete="username" placeholder="doctor@securehealth.org" class="w-full bg-[#0D1524] border border-[#1E2C48] focus:border-[#0381FE] focus:ring-1 focus:ring-[#0381FE] rounded-lg px-3.5 py-2.5 text-white text-sm focus:outline-none transition" />
                 </div>
                 <div>
                     <div class="flex items-center justify-between mb-1">
                         <label class="block text-xs font-semibold text-slate-300">Password</label>
-                        <a href="#" onclick="alert('Please contact your hospital network administrator to reset credentials.'); return false;" class="text-[11px] text-cyan-400 hover:underline">Forgot password?</a>
+                        <a href="#" onclick="alert('Please contact your hospital network administrator to reset credentials.'); return false;" class="text-[11px] text-blue-400 hover:text-blue-300 hover:underline">Forgot password?</a>
                     </div>
-                    <input id="login-password" type="password" required autocomplete="current-password" placeholder="••••••••" class="w-full bg-slate-950 border border-slate-700 focus:border-cyan-500 rounded-lg px-3.5 py-2.5 text-white text-sm focus:outline-none transition" />
+                    <input id="login-password" type="password" required autocomplete="current-password" placeholder="••••••••" class="w-full bg-[#0D1524] border border-[#1E2C48] focus:border-[#0381FE] focus:ring-1 focus:ring-[#0381FE] rounded-lg px-3.5 py-2.5 text-white text-sm focus:outline-none transition" />
                 </div>
                 <div class="flex items-center text-xs text-slate-400">
                     <label class="flex items-center gap-2 cursor-pointer">
-                        <input type="checkbox" checked class="rounded border-slate-700 bg-slate-950 text-cyan-600 focus:ring-0" />
+                        <input type="checkbox" checked class="rounded border-slate-700 bg-slate-950 text-[#0381FE] focus:ring-0" />
                         <span>Remember credentials on this terminal</span>
                     </label>
                 </div>
                 <p id="login-error" role="alert" class="hidden text-xs text-rose-400 bg-rose-950/40 border border-rose-800 p-2.5 rounded-lg"></p>
-                <button id="login-submit" class="w-full bg-gradient-to-r from-cyan-600 to-emerald-600 hover:from-cyan-500 hover:to-emerald-500 text-white font-bold rounded-lg py-2.5 text-sm shadow-lg transition flex items-center justify-center gap-2">
+                <button id="login-submit" class="w-full bg-gradient-to-r from-[#0381FE] to-[#1428A0] hover:from-blue-600 hover:to-indigo-700 text-white font-bold rounded-lg py-2.5 text-sm shadow-lg transition flex items-center justify-center gap-2">
                     <span>Authenticate & Access Portal</span>
                 </button>
             </form>
@@ -187,23 +221,23 @@
             <form id="form-register" onsubmit="registerPatient(event)" class="hidden space-y-3.5">
                 <div>
                     <label class="block text-xs font-semibold text-slate-300 mb-1">Full Legal Name</label>
-                    <input id="reg-name" type="text" required placeholder="Johnathan Doe" class="w-full bg-slate-950 border border-slate-700 focus:border-cyan-500 rounded-lg px-3.5 py-2 text-white text-sm focus:outline-none transition" />
+                    <input id="reg-name" type="text" required placeholder="Johnathan Doe" class="w-full bg-[#0D1524] border border-[#1E2C48] focus:border-[#0381FE] focus:ring-1 focus:ring-[#0381FE] rounded-lg px-3.5 py-2 text-white text-sm focus:outline-none transition" />
                 </div>
                 <div>
                     <label class="block text-xs font-semibold text-slate-300 mb-1">Email Address</label>
-                    <input id="reg-email" type="email" required placeholder="patient@securehealth.org" class="w-full bg-slate-950 border border-slate-700 focus:border-cyan-500 rounded-lg px-3.5 py-2 text-white text-sm focus:outline-none transition" />
+                    <input id="reg-email" type="email" required placeholder="patient@securehealth.org" class="w-full bg-[#0D1524] border border-[#1E2C48] focus:border-[#0381FE] focus:ring-1 focus:ring-[#0381FE] rounded-lg px-3.5 py-2 text-white text-sm focus:outline-none transition" />
                 </div>
                 <div>
                     <label class="block text-xs font-semibold text-slate-300 mb-1">Hospital / Clinic Network</label>
-                    <input id="reg-hospital" type="text" value="Metro Health General Hospital" class="w-full bg-slate-950 border border-slate-700 focus:border-cyan-500 rounded-lg px-3.5 py-2 text-white text-sm focus:outline-none transition" />
+                    <input id="reg-hospital" type="text" value="Metro Health General Hospital" class="w-full bg-[#0D1524] border border-[#1E2C48] focus:border-[#0381FE] focus:ring-1 focus:ring-[#0381FE] rounded-lg px-3.5 py-2 text-white text-sm focus:outline-none transition" />
                 </div>
                 <div>
                     <label class="block text-xs font-semibold text-slate-300 mb-1">Password (min. 8 characters)</label>
-                    <input id="reg-password" type="password" required minlength="8" placeholder="••••••••" class="w-full bg-slate-950 border border-slate-700 focus:border-cyan-500 rounded-lg px-3.5 py-2 text-white text-sm focus:outline-none transition" />
+                    <input id="reg-password" type="password" required minlength="8" placeholder="••••••••" class="w-full bg-[#0D1524] border border-[#1E2C48] focus:border-[#0381FE] focus:ring-1 focus:ring-[#0381FE] rounded-lg px-3.5 py-2 text-white text-sm focus:outline-none transition" />
                 </div>
                 <p id="reg-error" role="alert" class="hidden text-xs text-rose-400 bg-rose-950/40 border border-rose-800 p-2.5 rounded-lg"></p>
                 <p id="reg-success" role="alert" class="hidden text-xs text-emerald-400 bg-emerald-950/40 border border-emerald-800 p-2.5 rounded-lg"></p>
-                <button id="reg-submit" class="w-full bg-gradient-to-r from-emerald-600 to-cyan-600 hover:from-emerald-500 hover:to-cyan-500 text-white font-bold rounded-lg py-2.5 text-sm shadow-lg transition">
+                <button id="reg-submit" class="w-full bg-gradient-to-r from-[#0381FE] to-[#1428A0] hover:from-blue-600 hover:to-indigo-700 text-white font-bold rounded-lg py-2.5 text-sm shadow-lg transition">
                     Register Healthcare Account
                 </button>
             </form>
@@ -215,16 +249,16 @@
     </div>
 
     <!-- Top Navigation Bar -->
-    <header class="border-b border-slate-800 bg-slate-900/80 backdrop-blur sticky top-0 z-50">
+    <header class="border-b border-[#1E2C48] bg-[#0D1524]/90 backdrop-blur sticky top-0 z-50">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
             <div class="flex items-center space-x-3">
-                <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-cyan-600 to-emerald-500 flex items-center justify-center font-bold text-white shadow-lg glow-cyan text-xl">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-[#0381FE] to-[#1428A0] flex items-center justify-center font-bold text-white shadow-lg glow-samsung text-xl">
                     ⚕️
                 </div>
                 <div>
                     <div class="flex items-center space-x-2">
-                        <span class="font-extrabold text-lg tracking-tight bg-gradient-to-r from-cyan-400 to-emerald-400 bg-clip-text text-transparent">SecureHealth Chain</span>
-                        <span class="text-xs bg-slate-800 text-cyan-400 border border-cyan-800/60 px-2 py-0.5 rounded-full font-mono">Platform v1.0</span>
+                        <span class="font-extrabold text-lg tracking-tight bg-gradient-to-r from-blue-400 via-sky-300 to-indigo-300 bg-clip-text text-transparent">SecureHealth Chain</span>
+                        <span class="text-xs bg-blue-950/90 text-blue-300 border border-blue-800/80 px-2 py-0.5 rounded-full font-mono">Platform v1.0</span>
                     </div>
                     <p class="text-xs text-slate-400 hidden sm:block">EPP-BCFL: Lightweight Blockchain-Based Federated Learning for EHRs</p>
                 </div>
@@ -247,9 +281,9 @@
     </header>
 
     <!-- Sub-Nav Tab Navigation -->
-    <div class="bg-slate-900 border-b border-slate-800">
+    <div class="bg-[#0D1524] border-b border-[#1E2C48]">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex space-x-8 text-sm font-medium overflow-x-auto">
-            <button onclick="showTab('tab-doctor')" id="nav-doctor" class="tab-btn py-3 border-b-2 border-cyan-500 text-cyan-400 flex items-center space-x-2">
+            <button onclick="showTab('tab-doctor')" id="nav-doctor" class="tab-btn py-3 border-b-2 border-[#0381FE] text-blue-400 flex items-center space-x-2">
                 <span>📋 Clinical Records & Sealing</span>
             </button>
             <button onclick="showTab('tab-doctor-edge-fl')" id="nav-doctor-edge-fl" class="tab-btn py-3 border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center space-x-2">
@@ -276,16 +310,16 @@
     <!-- Main Container -->
     <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-1 w-full">
         <!-- Doctor Global Model Update Notification Banner -->
-        <div id="doctor-model-update-banner" class="hidden mb-6 bg-gradient-to-r from-purple-950/90 via-slate-900 to-cyan-950/90 border border-purple-500/50 rounded-2xl p-5 shadow-2xl transition">
+        <div id="doctor-model-update-banner" class="hidden mb-6 bg-gradient-to-r from-[#0F1E3D] via-[#121A2D] to-[#182647] border border-blue-500/40 rounded-3xl p-5 shadow-2xl glow-samsung transition">
             <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div class="flex items-start gap-3.5">
-                    <div class="w-10 h-10 rounded-xl bg-purple-600/30 border border-purple-400 flex items-center justify-center text-xl shrink-0 mt-0.5">
+                    <div class="w-10 h-10 rounded-xl bg-[#0381FE]/20 border border-[#0381FE]/50 text-blue-300 flex items-center justify-center text-xl shrink-0 mt-0.5">
                         🚀
                     </div>
                     <div>
                         <div class="flex items-center gap-2 flex-wrap">
-                            <span class="text-xs font-black uppercase tracking-wider text-purple-300 bg-purple-950 border border-purple-700 px-2.5 py-0.5 rounded-full">New Global Model Available</span>
-                            <span id="banner-round-badge" class="text-xs font-mono font-bold text-cyan-300 bg-cyan-950 border border-cyan-800 px-2 py-0.5 rounded-full">Round #1</span>
+                            <span class="text-xs font-black uppercase tracking-wider text-blue-200 bg-blue-950 border border-blue-700 px-2.5 py-0.5 rounded-full">New Global Model Available</span>
+                            <span id="banner-round-badge" class="text-xs font-mono font-bold text-sky-300 bg-blue-950/80 border border-blue-800 px-2 py-0.5 rounded-full">Round #1</span>
                             <span id="banner-growth-badge" class="text-xs font-bold text-emerald-400 bg-emerald-950 border border-emerald-800 px-2 py-0.5 rounded-full">📈 +14.0% Accuracy Boost</span>
                         </div>
                         <h3 id="banner-model-title" class="text-lg font-extrabold text-white mt-1">Federated Global Model Ready to Deploy</h3>
@@ -298,10 +332,10 @@
                     <button onclick="dismissGlobalUpdateNotification()" class="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-xl text-xs font-semibold border border-slate-700 transition">
                         Keep Current
                     </button>
-                    <button onclick="openGlobalModelModal()" class="px-4 py-2 bg-purple-900/60 hover:bg-purple-800/80 text-purple-300 rounded-xl text-xs font-bold border border-purple-600 transition flex items-center gap-1.5">
+                    <button onclick="openGlobalModelModal()" class="px-4 py-2 bg-blue-950/80 hover:bg-blue-900/80 text-blue-300 rounded-xl text-xs font-bold border border-blue-700 transition flex items-center gap-1.5">
                         <span>🔍 Review Details</span>
                     </button>
-                    <button onclick="applyGlobalModelUpdate()" class="px-4 py-2 bg-gradient-to-r from-emerald-600 to-cyan-600 hover:from-emerald-500 hover:to-cyan-500 text-white rounded-xl text-xs font-extrabold shadow-lg transition flex items-center gap-1.5">
+                    <button onclick="applyGlobalModelUpdate()" class="px-4 py-2 bg-gradient-to-r from-[#0381FE] to-[#1428A0] hover:from-blue-600 hover:to-indigo-700 text-white rounded-xl text-xs font-extrabold shadow-lg transition flex items-center gap-1.5">
                         <span>⚡ Apply Update</span>
                     </button>
                 </div>
@@ -311,8 +345,8 @@
 
         <!-- PATIENT PORTAL: authenticated patient's own records only -->
         <section id="tab-patient" class="hidden space-y-6">
-            <div class="bg-slate-900 border border-slate-800 rounded-xl p-6 shadow-xl">
-                <p class="text-xs font-bold uppercase tracking-wider text-cyan-400">Patient Portal</p>
+            <div class="bg-[#121A2D] border border-[#1E2C48] rounded-3xl p-6 shadow-xl">
+                <p class="text-xs font-bold uppercase tracking-wider text-blue-400">Patient Portal</p>
                 <h2 class="mt-2 text-2xl font-bold text-white">My Health Records</h2>
                 <p class="mt-2 text-sm text-slate-400">Only records linked to your signed-in patient account appear here. Select a record to verify its sealed integrity or open its QR code.</p>
                 <p id="patient-records-status" class="mt-4 text-sm text-slate-300" role="status">Loading your records…</p>
@@ -328,26 +362,26 @@
                 <div>
                     <h2 class="text-2xl font-bold tracking-tight text-white flex items-center gap-2">
                         <span>Electronic Health Record (EHR) Hub</span>
-                        <span class="text-xs bg-cyan-900 text-cyan-300 px-2 py-0.5 rounded border border-cyan-700">Module 1 & 3</span>
+                        <span class="text-xs bg-blue-950 text-blue-300 px-2 py-0.5 rounded border border-blue-800">Module 1 & 3</span>
                     </h2>
                     <p class="text-sm text-slate-400">Create immutable medical records. Hashes are permanently anchored onto Ethereum Ganache.</p>
                 </div>
-                <button onclick="openCreateModal()" class="px-4 py-2 bg-gradient-to-r from-cyan-600 to-emerald-600 hover:from-cyan-500 hover:to-emerald-500 text-white rounded-lg text-sm font-semibold shadow-md flex items-center gap-2 transition">
+                <button onclick="openCreateModal()" class="px-4 py-2 bg-gradient-to-r from-[#0381FE] to-[#1428A0] hover:from-blue-600 hover:to-indigo-700 text-white rounded-lg text-sm font-semibold shadow-md flex items-center gap-2 transition">
                     <span>➕ New Patient Diagnosis & Blockchain Seal</span>
                 </button>
             </div>
 
             <!-- EHR Records Table -->
-            <div class="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden shadow-xl">
+            <div class="bg-[#121A2D] border border-[#1E2C48] rounded-3xl overflow-hidden shadow-xl">
                 <div class="p-4 border-b border-slate-800 flex items-center justify-between">
                     <span class="text-sm font-semibold text-slate-300">Registered Patient Records</span>
-                    <button onclick="fetchRecords()" class="text-xs text-cyan-400 hover:underline flex items-center gap-1">
+                    <button onclick="fetchRecords()" class="text-xs text-blue-400 hover:text-blue-300 hover:underline flex items-center gap-1">
                         🔄 Refresh List
                     </button>
                 </div>
                 <div class="overflow-x-auto">
                     <table class="w-full text-left text-sm text-slate-300">
-                        <thead class="bg-slate-950/60 text-xs uppercase tracking-wider text-slate-400 border-b border-slate-800">
+                        <thead class="bg-[#0D1524]/60 text-xs uppercase tracking-wider text-slate-400 border-b border-slate-800">
                             <tr>
                                 <th class="px-4 py-3">Record UUID</th>
                                 <th class="px-4 py-3">Patient</th>
@@ -372,11 +406,11 @@
         <!-- ========================================== -->
         <section id="tab-doctor-edge-fl" class="hidden space-y-6">
             <!-- Header & Educational Concept Banner -->
-            <div class="bg-gradient-to-r from-slate-900 via-slate-900 to-cyan-950/40 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-4">
+            <div class="bg-gradient-to-r from-[#121A2D] via-[#121A2D] to-[#1428A0]/25 border border-[#1E2C48] rounded-3xl p-6 shadow-xl space-y-4">
                 <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
                     <div>
                         <div class="flex items-center gap-2">
-                            <span class="text-xs font-bold uppercase tracking-wider text-cyan-400 bg-cyan-950 border border-cyan-800 px-2.5 py-0.5 rounded-full">Doctor Edge Silo</span>
+                            <span class="text-xs font-bold uppercase tracking-wider text-blue-400 bg-blue-950 border border-blue-800 px-2.5 py-0.5 rounded-full">Doctor Edge Silo</span>
                             <span class="text-xs font-bold uppercase tracking-wider text-emerald-400 bg-emerald-950 border border-emerald-800 px-2.5 py-0.5 rounded-full">Module 2 & 3: EPP-BCFL</span>
                         </div>
                         <h2 class="text-2xl font-black text-white mt-2">Privacy-Preserving Edge Model Training</h2>
@@ -385,7 +419,7 @@
                             <strong class="text-slate-200">Raw patient data never leaves this node.</strong> Only mathematically perturbed model weight updates are pushed to the central server and anchored on the blockchain.
                         </p>
                     </div>
-                    <div class="flex items-center gap-2 bg-slate-950/80 border border-slate-800 p-3 rounded-xl text-xs">
+                    <div class="flex items-center gap-2 bg-[#0D1524]/80 border border-slate-800 p-3 rounded-xl text-xs">
                         <div class="w-3 h-3 rounded-full bg-emerald-400 animate-pulse"></div>
                         <div>
                             <span class="font-bold text-slate-200 block" id="edge-hosp-name">Metro Health General Hospital</span>
@@ -396,21 +430,21 @@
 
                 <!-- 3-Stage Visual Pipeline -->
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-3 pt-2 text-xs">
-                    <div class="bg-slate-950/70 border border-slate-800 p-3.5 rounded-xl space-y-1.5">
-                        <div class="flex items-center gap-2 text-cyan-400 font-bold">
-                            <span class="w-5 h-5 rounded-full bg-cyan-950 border border-cyan-700 flex items-center justify-center text-[10px]">1</span>
+                    <div class="bg-[#0D1524] border border-[#1E2C48] p-4 rounded-2xl space-y-1.5">
+                        <div class="flex items-center gap-2 text-blue-400 font-bold">
+                            <span class="w-5 h-5 rounded-full bg-blue-950 border border-blue-700 flex items-center justify-center text-[10px]">1</span>
                             <span>Local Patient Vitals</span>
                         </div>
                         <p class="text-slate-400 text-[11px]">Collected clinical vitals (BP, Chol, HR, Angina) are stored strictly in local hospital records. No raw records are exposed.</p>
                     </div>
-                    <div class="bg-slate-950/70 border border-slate-800 p-3.5 rounded-xl space-y-1.5">
+                    <div class="bg-[#0D1524] border border-[#1E2C48] p-4 rounded-2xl space-y-1.5">
                         <div class="flex items-center gap-2 text-purple-400 font-bold">
                             <span class="w-5 h-5 rounded-full bg-purple-950 border border-purple-700 flex items-center justify-center text-[10px]">2</span>
                             <span>Differential Privacy (DP-SGD)</span>
                         </div>
                         <p class="text-slate-400 text-[11px]">Gradients are clipped and Gaussian noise &xi; &sim; N(0, &sigma;&sup2;) is added to parameters. Prevents membership inference attacks.</p>
                     </div>
-                    <div class="bg-slate-950/70 border border-slate-800 p-3.5 rounded-xl space-y-1.5">
+                    <div class="bg-[#0D1524] border border-[#1E2C48] p-4 rounded-2xl space-y-1.5">
                         <div class="flex items-center gap-2 text-emerald-400 font-bold">
                             <span class="w-5 h-5 rounded-full bg-emerald-950 border border-emerald-700 flex items-center justify-center text-[10px]">3</span>
                             <span>Blockchain Model Anchor</span>
@@ -423,25 +457,25 @@
             <!-- Two-Column Workspace -->
             <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
                 <!-- Left: Local Dataset & Training Controls -->
-                <div class="lg:col-span-6 bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-5">
+                <div class="lg:col-span-6 bg-[#121A2D] border border-[#1E2C48] rounded-3xl p-6 shadow-xl space-y-5">
                     <div class="border-b border-slate-800 pb-3 flex items-center justify-between">
                         <div>
                             <h3 class="text-base font-bold text-white">Local Edge Training Engine</h3>
                             <p class="text-xs text-slate-400">Execute on-device forward & backward propagation</p>
                         </div>
-                        <span class="text-xs font-mono bg-cyan-950 text-cyan-300 border border-cyan-800 px-2.5 py-1 rounded-lg">On-Device Engine</span>
+                        <span class="text-xs font-mono bg-blue-950 text-blue-300 border border-blue-800 px-2.5 py-1 rounded-lg">On-Device Engine</span>
                     </div>
 
                     <!-- Local Dataset Stats -->
                     <div class="grid grid-cols-2 gap-3 text-xs">
-                        <div class="bg-slate-950 p-3.5 rounded-xl border border-slate-800">
+                        <div class="bg-[#0D1524] p-4 rounded-2xl border border-[#1E2C48]">
                             <span class="text-slate-500 block">Available Local Records</span>
                             <span id="edge-records-count" class="text-xl font-black text-white mt-1 block">Checking...</span>
                             <span class="text-[10px] text-emerald-400">🔒 Confined to Hospital Silo</span>
                         </div>
-                        <div class="bg-slate-950 p-3.5 rounded-xl border border-slate-800">
+                        <div class="bg-[#0D1524] p-4 rounded-2xl border border-[#1E2C48]">
                             <span class="text-slate-500 block">Extracted Feature Dimensions</span>
-                            <span class="text-xl font-black text-cyan-400 mt-1 block">6 Features</span>
+                            <span class="text-xl font-black text-blue-400 mt-1 block">6 Features</span>
                             <span class="text-[10px] text-slate-400">BP, Chol, MaxHR, Age, FBS, Angina</span>
                         </div>
                     </div>
@@ -451,9 +485,9 @@
                         <div>
                             <div class="flex items-center justify-between mb-1.5">
                                 <label class="text-xs font-semibold text-slate-300">Differential Privacy Budget (&epsilon; Epsilon)</label>
-                                <span id="dp-epsilon-display" class="text-xs font-mono font-bold text-cyan-400 bg-cyan-950/80 px-2 py-0.5 rounded border border-cyan-800">&epsilon; = 1.0</span>
+                                <span id="dp-epsilon-display" class="text-xs font-mono font-bold text-blue-400 bg-blue-950/80 px-2 py-0.5 rounded border border-blue-800">&epsilon; = 1.0</span>
                             </div>
-                            <input type="range" id="edge-dp-epsilon" min="0.2" max="3.0" step="0.1" value="1.0" oninput="updateEpsilonPreview()" class="w-full h-2 bg-slate-950 rounded-lg appearance-none cursor-pointer accent-cyan-500" />
+                            <input type="range" id="edge-dp-epsilon" min="0.2" max="3.0" step="0.1" value="1.0" oninput="updateEpsilonPreview()" class="w-full h-2 bg-slate-950 rounded-lg appearance-none cursor-pointer accent-[#0381FE]" />
                             <div class="flex justify-between text-[10px] text-slate-500 mt-1 font-mono">
                                 <span>&epsilon; = 0.2 (Max Privacy / High Noise)</span>
                                 <span>&epsilon; = 1.0 (Balanced)</span>
@@ -464,15 +498,15 @@
                         <div class="grid grid-cols-2 gap-3">
                             <div>
                                 <label class="block text-xs font-semibold text-slate-300 mb-1">Local Epochs</label>
-                                <input type="number" id="edge-epochs" value="5" min="1" max="20" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-white text-xs font-mono focus:border-cyan-500 focus:outline-none" />
+                                <input type="number" id="edge-epochs" value="5" min="1" max="20" class="w-full bg-[#0D1524] border border-[#1E2C48] rounded-lg px-3 py-2 text-white text-xs font-mono focus:border-[#0381FE] focus:ring-1 focus:ring-[#0381FE] focus:outline-none" />
                             </div>
                             <div>
                                 <label class="block text-xs font-semibold text-slate-300 mb-1">Calculated Noise Scale (&sigma;)</label>
-                                <input type="text" id="edge-noise-sigma" value="0.2422" readonly class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-slate-400 text-xs font-mono" />
+                                <input type="text" id="edge-noise-sigma" value="0.2422" readonly class="w-full bg-[#0D1524] border border-[#1E2C48] rounded-lg px-3 py-2 text-slate-400 text-xs font-mono" />
                             </div>
                         </div>
 
-                        <button onclick="runDoctorLocalTraining()" id="btn-train-edge" class="w-full py-3 bg-gradient-to-r from-cyan-600 to-purple-600 hover:from-cyan-500 hover:to-purple-500 text-white font-bold rounded-xl text-sm shadow-lg flex items-center justify-center gap-2 transition">
+                        <button onclick="runDoctorLocalTraining()" id="btn-train-edge" class="w-full py-3 bg-gradient-to-r from-[#0381FE] to-indigo-700 hover:from-blue-600 hover:to-indigo-600 text-white font-bold rounded-xl text-sm shadow-lg flex items-center justify-center gap-2 transition">
                             <span>⚡ Train Local Model & Apply Differential Privacy</span>
                         </button>
                     </div>
@@ -480,14 +514,14 @@
                     <!-- Edge Execution Terminal Log -->
                     <div class="space-y-1.5">
                         <span class="text-xs font-bold text-slate-400">Local Training Telemetry:</span>
-                        <div id="edge-training-terminal" class="bg-slate-950 rounded-xl p-3 border border-slate-800 text-[11px] font-mono space-y-1 text-slate-400 max-h-36 overflow-y-auto">
+                        <div id="edge-training-terminal" class="bg-[#0D1524] rounded-2xl p-3.5 border border-[#1E2C48] text-[11px] font-mono space-y-1 text-slate-400 max-h-36 overflow-y-auto">
                             <div class="text-slate-500">Ready to train on local hospital EHR records. Click the button above.</div>
                         </div>
                     </div>
                 </div>
 
                 <!-- Right: Model Update Package & Push to Central Server -->
-                <div class="lg:col-span-6 bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl flex flex-col justify-between space-y-5">
+                <div class="lg:col-span-6 bg-[#121A2D] border border-[#1E2C48] rounded-3xl p-6 shadow-xl flex flex-col justify-between space-y-5">
                     <div>
                         <div class="border-b border-slate-800 pb-3 flex items-center justify-between">
                             <div>
@@ -499,15 +533,15 @@
 
                         <!-- Training Metrics Cards -->
                         <div class="grid grid-cols-3 gap-3 my-4 text-center">
-                            <div class="bg-slate-950 p-3 rounded-xl border border-slate-800">
+                            <div class="bg-[#0D1524] p-3.5 rounded-2xl border border-[#1E2C48]">
                                 <span class="text-[11px] text-slate-500 block">Local Loss</span>
-                                <span id="edge-metric-loss" class="text-lg font-black text-cyan-400 font-mono mt-0.5 block">--</span>
+                                <span id="edge-metric-loss" class="text-lg font-black text-blue-400 font-mono mt-0.5 block">--</span>
                             </div>
-                            <div class="bg-slate-950 p-3 rounded-xl border border-slate-800">
+                            <div class="bg-[#0D1524] p-3.5 rounded-2xl border border-[#1E2C48]">
                                 <span class="text-[11px] text-slate-500 block">Local Accuracy</span>
                                 <span id="edge-metric-acc" class="text-lg font-black text-emerald-400 font-mono mt-0.5 block">--</span>
                             </div>
-                            <div class="bg-slate-950 p-3 rounded-xl border border-slate-800">
+                            <div class="bg-[#0D1524] p-3.5 rounded-2xl border border-[#1E2C48]">
                                 <span class="text-[11px] text-slate-500 block">Samples Used</span>
                                 <span id="edge-metric-samples" class="text-lg font-black text-purple-400 font-mono mt-0.5 block">--</span>
                             </div>
@@ -516,7 +550,7 @@
                         <!-- Model Hash Display -->
                         <div class="space-y-2">
                             <label class="text-xs font-semibold text-slate-300 block">Generated Model Update Hash (SHA-256)</label>
-                            <div class="p-3 bg-slate-950 border border-slate-800 rounded-xl font-mono text-xs text-emerald-400 break-all" id="edge-model-hash">
+                            <div class="p-3 bg-[#0D1524] border border-[#1E2C48] rounded-2xl font-mono text-xs text-emerald-400 break-all" id="edge-model-hash">
                                 0x... (Run local training to compute update hash)
                             </div>
                             <p class="text-[11px] text-slate-500">
@@ -527,7 +561,7 @@
 
                     <!-- Push to Central Server Action & Blockchain Receipt -->
                     <div class="space-y-4 pt-4 border-t border-slate-800">
-                        <button onclick="pushDoctorModelUpdate()" id="btn-push-edge" disabled class="w-full py-3 bg-gradient-to-r from-emerald-600 to-cyan-600 hover:from-emerald-500 hover:to-cyan-500 disabled:opacity-40 disabled:cursor-not-allowed text-white font-bold rounded-xl text-sm shadow-lg flex items-center justify-center gap-2 transition">
+                        <button onclick="pushDoctorModelUpdate()" id="btn-push-edge" disabled class="w-full py-3 bg-gradient-to-r from-[#0381FE] to-[#1428A0] hover:from-blue-600 hover:to-indigo-700 disabled:opacity-40 disabled:cursor-not-allowed text-white font-bold rounded-xl text-sm shadow-lg flex items-center justify-center gap-2 transition">
                             <span>🚀 Push Model Update to Central Server & Blockchain</span>
                         </button>
 
@@ -538,20 +572,20 @@
                                     <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
                                     <span>Anchored on Ethereum Blockchain</span>
                                 </span>
-                                <span id="edge-receipt-block" class="font-mono text-cyan-400">Block #--</span>
+                                <span id="edge-receipt-block" class="font-mono text-blue-400">Block #--</span>
                             </div>
                             <div class="text-slate-400 font-mono text-[11px] break-all">
                                 <span class="text-slate-500 block">Ethereum Transaction Hash:</span>
                                 <span id="edge-receipt-tx" class="text-slate-300">--</span>
                             </div>
                             <!-- Central Server Gate Status -->
-                            <div class="bg-slate-900/90 border border-slate-800 p-2.5 rounded-lg space-y-1">
+                            <div class="bg-[#121A2D]/90 border border-[#1E2C48] p-2.5 rounded-lg space-y-1">
                                 <div class="flex items-center justify-between">
                                     <span class="text-[11px] text-slate-400 font-semibold">Central Server Verification Gate:</span>
                                     <span class="text-[11px] font-bold text-emerald-400 bg-emerald-950 border border-emerald-800 px-2 py-0.5 rounded">🟢 VERIFIED AUTHENTIC</span>
                                 </div>
                                 <p class="text-[10px] text-slate-400">
-                                    Cryptographic update hash verified against smart contract <span class="font-mono text-cyan-400">SecureHealthRegistry.sol</span>. Update is admitted to FedAvg aggregation pool.
+                                    Cryptographic update hash verified against smart contract <span class="font-mono text-blue-400">SecureHealthRegistry.sol</span>. Update is admitted to FedAvg aggregation pool.
                                 </p>
                             </div>
                             <!-- Sync Global Model -->
@@ -560,7 +594,7 @@
                                     <span class="text-[11px] text-slate-300 font-bold block">Synchronized with Global Model</span>
                                     <span id="doctor-synced-round" class="text-[10px] text-slate-500">Global Model weights active for AI Risk Predictor</span>
                                 </div>
-                                <button onclick="syncLatestGlobalModel()" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-cyan-400 text-xs font-semibold rounded-lg border border-slate-700 transition">
+                                <button onclick="syncLatestGlobalModel()" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-blue-400 text-xs font-semibold rounded-lg border border-slate-700 transition">
                                     🔄 Sync Latest Model
                                 </button>
                             </div>
@@ -576,7 +610,7 @@
         <section id="tab-predict" class="hidden space-y-6">
             <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
                 <!-- Form Inputs -->
-                <div class="lg:col-span-7 bg-slate-900 border border-slate-800 rounded-xl p-6 shadow-xl space-y-5">
+                <div class="lg:col-span-7 bg-[#121A2D] border border-[#1E2C48] rounded-3xl p-6 shadow-xl space-y-5">
                     <div>
                         <div class="flex items-center space-x-2">
                             <h2 class="text-xl font-bold text-white">AI Health Risk Predictor</h2>
@@ -584,9 +618,9 @@
                         </div>
                         <p class="text-xs text-slate-400 mt-1">Evaluates clinical vitals using the globally trained Federated Neural Model.</p>
                     <!-- Active Intelligence Engine Status Card -->
-                    <div id="predict-model-badge-card" class="bg-slate-950 p-3.5 rounded-xl border border-slate-800 flex items-center justify-between text-xs mt-3">
+                    <div id="predict-model-badge-card" class="bg-[#0D1524] p-4 rounded-2xl border border-[#1E2C48] flex items-center justify-between text-xs mt-3">
                         <div class="flex items-center gap-2">
-                            <span id="predict-status-dot" class="w-2.5 h-2.5 rounded-full bg-cyan-400"></span>
+                            <span id="predict-status-dot" class="w-2.5 h-2.5 rounded-full bg-[#0381FE]"></span>
                             <span class="text-slate-400">Active Intelligence:</span>
                             <strong id="predict-active-model-name" class="text-white font-mono">Checking...</strong>
                         </div>
@@ -601,48 +635,48 @@
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
                         <div>
                             <label class="block text-xs font-semibold text-slate-400 mb-1">Patient Age</label>
-                            <input type="number" id="pred-age" value="54" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-white focus:border-cyan-500 focus:outline-none">
+                            <input type="number" id="pred-age" value="54" class="w-full bg-[#0D1524] border border-[#1E2C48] rounded-lg px-3 py-2 text-white focus:border-[#0381FE] focus:ring-1 focus:ring-[#0381FE] focus:outline-none">
                         </div>
                         <div>
                             <label class="block text-xs font-semibold text-slate-400 mb-1">Resting Blood Pressure (mm Hg)</label>
-                            <input type="number" id="pred-bp" value="138" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-white focus:border-cyan-500 focus:outline-none">
+                            <input type="number" id="pred-bp" value="138" class="w-full bg-[#0D1524] border border-[#1E2C48] rounded-lg px-3 py-2 text-white focus:border-[#0381FE] focus:ring-1 focus:ring-[#0381FE] focus:outline-none">
                         </div>
                         <div>
                             <label class="block text-xs font-semibold text-slate-400 mb-1">Serum Cholesterol (mg/dl)</label>
-                            <input type="number" id="pred-chol" value="248" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-white focus:border-cyan-500 focus:outline-none">
+                            <input type="number" id="pred-chol" value="248" class="w-full bg-[#0D1524] border border-[#1E2C48] rounded-lg px-3 py-2 text-white focus:border-[#0381FE] focus:ring-1 focus:ring-[#0381FE] focus:outline-none">
                         </div>
                         <div>
                             <label class="block text-xs font-semibold text-slate-400 mb-1">Maximum Heart Rate Achieved</label>
-                            <input type="number" id="pred-hr" value="128" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-white focus:border-cyan-500 focus:outline-none">
+                            <input type="number" id="pred-hr" value="128" class="w-full bg-[#0D1524] border border-[#1E2C48] rounded-lg px-3 py-2 text-white focus:border-[#0381FE] focus:ring-1 focus:ring-[#0381FE] focus:outline-none">
                         </div>
                         <div>
                             <label class="block text-xs font-semibold text-slate-400 mb-1">Fasting Blood Sugar > 120 mg/dl</label>
-                            <select id="pred-fbs" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-white focus:border-cyan-500 focus:outline-none">
+                            <select id="pred-fbs" class="w-full bg-[#0D1524] border border-[#1E2C48] rounded-lg px-3 py-2 text-white focus:border-[#0381FE] focus:ring-1 focus:ring-[#0381FE] focus:outline-none">
                                 <option value="0">False (&le; 120 mg/dl)</option>
                                 <option value="1">True (> 120 mg/dl)</option>
                             </select>
                         </div>
                         <div>
                             <label class="block text-xs font-semibold text-slate-400 mb-1">Exercise Induced Angina</label>
-                            <select id="pred-angina" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-white focus:border-cyan-500 focus:outline-none">
+                            <select id="pred-angina" class="w-full bg-[#0D1524] border border-[#1E2C48] rounded-lg px-3 py-2 text-white focus:border-[#0381FE] focus:ring-1 focus:ring-[#0381FE] focus:outline-none">
                                 <option value="0">No</option>
                                 <option value="1">Yes</option>
                             </select>
                         </div>
                     </div>
 
-                    <button onclick="runRiskPrediction()" class="w-full py-3 bg-gradient-to-r from-cyan-600 to-emerald-600 hover:from-cyan-500 hover:to-emerald-500 text-white font-bold rounded-lg shadow-lg flex items-center justify-center gap-2 transition">
+                    <button onclick="runRiskPrediction()" class="w-full py-3 bg-gradient-to-r from-[#0381FE] to-[#1428A0] hover:from-blue-600 hover:to-indigo-700 text-white font-bold rounded-lg shadow-lg flex items-center justify-center gap-2 transition">
                         <span>⚡ Run Federated AI Risk Inference</span>
                     </button>
                 </div>
 
                 <!-- Prediction Results Dashboard -->
-                <div class="lg:col-span-5 bg-slate-900 border border-slate-800 rounded-xl p-6 shadow-xl flex flex-col justify-between">
+                <div class="lg:col-span-5 bg-[#121A2D] border border-[#1E2C48] rounded-3xl p-6 shadow-xl flex flex-col justify-between">
                     <div>
                         <h3 class="text-sm font-bold uppercase tracking-wider text-slate-400">Clinical Risk Assessment</h3>
                         <div id="risk-score-container" class="mt-6 text-center">
-                            <div class="inline-flex items-center justify-center w-36 h-36 rounded-full border-4 border-cyan-500/30 bg-slate-950 glow-cyan">
-                                <span id="risk-percentage" class="text-4xl font-extrabold text-cyan-400">--%</span>
+                            <div class="inline-flex items-center justify-center w-36 h-36 rounded-full border-4 border-[#0381FE]/40 bg-[#0D1524] glow-samsung">
+                                <span id="risk-percentage" class="text-4xl font-extrabold text-blue-400">--%</span>
                             </div>
                             <div id="risk-badge" class="mt-4 inline-block text-xs font-bold uppercase px-3 py-1 rounded-full bg-slate-800 text-slate-300">
                                 Awaiting Input
@@ -650,7 +684,7 @@
                         </div>
                     </div>
 
-                    <div id="recommendations-box" class="mt-6 p-4 rounded-lg bg-slate-950 border border-slate-800 text-xs text-slate-400 space-y-2">
+                    <div id="recommendations-box" class="mt-6 p-4 rounded-lg bg-[#0D1524] border border-[#1E2C48] text-xs text-slate-400 space-y-2">
                         <span class="font-semibold text-slate-300 block">System Clinical Notes:</span>
                         <ul id="recommendations-list" class="list-disc pl-4 space-y-1">
                             <li>Input clinical parameters and click "Run Federated AI Risk Inference".</li>
@@ -667,7 +701,7 @@
         <section id="tab-verify" class="hidden space-y-6">
             <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
                 <!-- Verifier Controls -->
-                <div class="lg:col-span-6 bg-slate-900 border border-slate-800 rounded-xl p-6 shadow-xl space-y-5">
+                <div class="lg:col-span-6 bg-[#121A2D] border border-[#1E2C48] rounded-3xl p-6 shadow-xl space-y-5">
                     <div>
                         <div class="flex items-center space-x-2">
                             <h2 class="text-xl font-bold text-white">QR Integrity Verification Engine</h2>
@@ -678,11 +712,11 @@
 
                     <div>
                         <label class="block text-xs font-semibold text-slate-400 mb-1">Select or Enter Record UUID</label>
-                        <input type="text" id="verify-uuid" value="EHR-DEMO-001" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-white font-mono text-sm focus:border-cyan-500 focus:outline-none">
+                        <input type="text" id="verify-uuid" value="EHR-DEMO-001" class="w-full bg-[#0D1524] border border-[#1E2C48] rounded-lg px-3 py-2 text-white font-mono text-sm focus:border-[#0381FE] focus:ring-1 focus:ring-[#0381FE] focus:outline-none">
                     </div>
 
                     <div class="flex gap-3">
-                        <button onclick="verifyRecordAuthenticity()" class="flex-1 py-2.5 bg-cyan-600 hover:bg-cyan-500 text-white font-semibold rounded-lg text-sm shadow transition">
+                        <button onclick="verifyRecordAuthenticity()" class="flex-1 py-2.5 bg-gradient-to-r from-[#0381FE] to-[#1428A0] hover:from-blue-600 hover:to-indigo-700 text-white font-bold rounded-xl text-sm shadow transition">
                             🔍 Verify Authenticity on Blockchain
                         </button>
                     </div>
@@ -690,22 +724,22 @@
                 </div>
 
                 <!-- Verification Output Results -->
-                <div class="lg:col-span-6 bg-slate-900 border border-slate-800 rounded-xl p-6 shadow-xl flex flex-col justify-between">
+                <div class="lg:col-span-6 bg-[#121A2D] border border-[#1E2C48] rounded-3xl p-6 shadow-xl flex flex-col justify-between">
                     <div>
                         <h3 class="text-sm font-bold uppercase tracking-wider text-slate-400 mb-4">Verification Audit Result</h3>
                         
-                        <div id="verify-badge-container" class="p-6 rounded-xl bg-slate-950 border border-slate-800 text-center space-y-3">
+                        <div id="verify-badge-container" class="p-6 rounded-xl bg-[#0D1524] border border-[#1E2C48] text-center space-y-3">
                             <div id="verify-status-icon" class="text-4xl">🛡️</div>
                             <h4 id="verify-status-title" class="text-lg font-bold text-slate-300">Ready to Verify</h4>
                             <p id="verify-status-desc" class="text-xs text-slate-400">Click "Verify Authenticity" to perform real-time cryptographic hash matching against Ganache.</p>
                         </div>
 
                         <div class="mt-4 space-y-2 text-xs font-mono">
-                            <div class="p-2 rounded bg-slate-950 border border-slate-800/80">
+                            <div class="p-2 rounded bg-[#0D1524] border border-[#1E2C48]/80">
                                 <span class="text-slate-500 block">On-Chain Blockchain Hash:</span>
                                 <span id="verify-chain-hash" class="text-slate-300 break-all">Pending check...</span>
                             </div>
-                            <div class="p-2 rounded bg-slate-950 border border-slate-800/80">
+                            <div class="p-2 rounded bg-[#0D1524] border border-[#1E2C48]/80">
                                 <span class="text-slate-500 block">Recomputed Database Hash:</span>
                                 <span id="verify-computed-hash" class="text-slate-300 break-all">Pending check...</span>
                             </div>
@@ -729,26 +763,26 @@
         <section id="tab-fl" class="hidden space-y-6">
             <!-- 4 Overview Metric Cards -->
             <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-                <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl shadow">
+                <div class="bg-[#121A2D] border border-[#1E2C48] p-5 rounded-2xl shadow">
                     <span class="text-xs text-slate-400 block">FL Rounds Completed</span>
-                    <span id="fl-rounds-count" class="text-2xl font-black text-cyan-400">0</span>
+                    <span id="fl-rounds-count" class="text-2xl font-black text-blue-400">0</span>
                 </div>
-                <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl shadow">
+                <div class="bg-[#121A2D] border border-[#1E2C48] p-5 rounded-2xl shadow">
                     <span class="text-xs text-slate-400 block">Global Model Accuracy</span>
                     <span id="fl-accuracy" class="text-2xl font-black text-emerald-400">—</span>
                 </div>
-                <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl shadow">
+                <div class="bg-[#121A2D] border border-[#1E2C48] p-5 rounded-2xl shadow">
                     <span class="text-xs text-slate-400 block">Participating Silos</span>
                     <span class="text-2xl font-black text-purple-400">4 Hospitals</span>
                 </div>
-                <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl shadow">
+                <div class="bg-[#121A2D] border border-[#1E2C48] p-5 rounded-2xl shadow">
                     <span class="text-xs text-slate-400 block">Privacy & Security</span>
                     <span class="text-xs font-mono text-amber-400 block mt-2">Rényi DP-SGD + Ethereum EVM</span>
                 </div>
             </div>
 
             <!-- Central Verification Gate for Incoming Hospital Edge Updates -->
-            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-4">
+            <div class="bg-[#121A2D] border border-[#1E2C48] rounded-3xl p-6 shadow-xl space-y-4">
                 <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-800 pb-4">
                     <div>
                         <div class="flex items-center gap-2">
@@ -760,7 +794,7 @@
                             Before accepting local model updates into the Federated Averaging (FedAvg) aggregation pool, the Central Server cryptographically verifies each hospital's update hash against on-chain smart contract commitments on Ethereum.
                         </p>
                     </div>
-                    <button onclick="fetchFLStatus()" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-cyan-300 rounded-lg text-xs font-medium border border-slate-700 flex items-center gap-1.5 self-start md:self-auto">
+                    <button onclick="fetchFLStatus()" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-blue-300 rounded-lg text-xs font-medium border border-slate-700 flex items-center gap-1.5 self-start md:self-auto">
                         <span>🔄 Refresh Verification Gate</span>
                     </button>
                 </div>
@@ -772,35 +806,35 @@
             </div>
 
             <!-- Central Aggregation Engine (FedAvg) & Blockchain Anchor -->
-            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-4">
+            <div class="bg-[#121A2D] border border-[#1E2C48] rounded-3xl p-6 shadow-xl space-y-4">
                 <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div>
                         <h3 class="text-lg font-bold text-white flex items-center gap-2">
                             <span>Federated Averaging (FedAvg) Aggregator</span>
-                            <span class="text-xs font-mono bg-cyan-950 text-cyan-400 border border-cyan-800 px-2 py-0.5 rounded">CKKS / FedAvg</span>
+                            <span class="text-xs font-mono bg-cyan-950 text-blue-400 border border-blue-800 px-2 py-0.5 rounded">CKKS / FedAvg</span>
                         </h3>
                         <p class="text-xs text-slate-400 mt-1">
-                            Aggregates model weights across all verified hospital nodes using sample-count weighted FedAvg. Publishes the updated global model hash to the Ethereum smart contract (<span class="font-mono text-cyan-300">SecureHealthRegistry.sol</span>) and broadcasts the new model back to all hospital edge nodes.
+                            Aggregates model weights across all verified hospital nodes using sample-count weighted FedAvg. Publishes the updated global model hash to the Ethereum smart contract (<span class="font-mono text-blue-300">SecureHealthRegistry.sol</span>) and broadcasts the new model back to all hospital edge nodes.
                         </p>
                     </div>
                     <div class="flex gap-2 flex-wrap">
-                        <button onclick="verifyFLUpdates()" class="px-4 py-2.5 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-cyan-300 font-semibold rounded-lg text-sm">
+                        <button onclick="verifyFLUpdates()" class="px-4 py-2.5 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-blue-300 font-semibold rounded-lg text-sm">
                             🔍 Verify On-Chain Hashes
                         </button>
-                        <button onclick="triggerFLRound()" id="btn-trigger-fl" class="px-5 py-2.5 bg-gradient-to-r from-purple-600 to-cyan-600 hover:from-purple-500 hover:to-cyan-500 text-white font-bold rounded-lg text-sm transition flex items-center gap-2 shadow-lg">
+                        <button onclick="triggerFLRound()" id="btn-trigger-fl" class="px-5 py-2.5 bg-gradient-to-r from-[#0381FE] to-[#1428A0] hover:from-blue-600 hover:to-indigo-700 text-white font-bold rounded-lg text-sm transition flex items-center gap-2 shadow-lg">
                             <span>🚀 Run FedAvg & Broadcast Global Model</span>
                         </button>
                     </div>
                 </div>
 
                 <!-- Aggregation Terminal Log -->
-                <div class="bg-slate-950 rounded-xl p-4 border border-slate-800 text-xs font-mono space-y-2 text-slate-300 max-h-56 overflow-y-auto" id="fl-log-terminal">
-                    <div class="text-cyan-400 font-bold">[*] Central Server Ready. Review verified incoming updates above and click "Run FedAvg & Broadcast Global Model".</div>
+                <div class="bg-[#0D1524] rounded-2xl p-4 border border-[#1E2C48] text-xs font-mono space-y-2 text-slate-300 max-h-56 overflow-y-auto" id="fl-log-terminal">
+                    <div class="text-blue-400 font-bold">[*] Central Server Ready. Review verified incoming updates above and click "Run FedAvg & Broadcast Global Model".</div>
                 </div>
             </div>
 
             <!-- Global Model Broadcast & Distribution Card -->
-            <div id="fl-global-model-card" class="bg-gradient-to-r from-slate-900 to-cyan-950/30 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-4">
+            <div id="fl-global-model-card" class="bg-gradient-to-r from-[#121A2D] to-[#1428A0]/25 border border-[#1E2C48] rounded-3xl p-6 shadow-xl space-y-4">
                 <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-800/80 pb-3">
                     <div class="flex items-center gap-2">
                         <span class="w-3 h-3 rounded-full bg-emerald-400 animate-pulse"></span>
@@ -811,17 +845,17 @@
                     </span>
                 </div>
                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-xs font-mono">
-                    <div class="bg-slate-950 p-3 rounded-xl border border-slate-800">
+                    <div class="bg-[#0D1524] p-3.5 rounded-2xl border border-[#1E2C48]">
                         <span class="text-slate-500 block">Global Round</span>
-                        <span id="fl-global-round-num" class="text-lg font-black text-cyan-400 block mt-1">Round #0</span>
+                        <span id="fl-global-round-num" class="text-lg font-black text-blue-400 block mt-1">Round #0</span>
                     </div>
-                    <div class="bg-slate-950 p-3 rounded-xl border border-slate-800">
+                    <div class="bg-[#0D1524] p-3.5 rounded-2xl border border-[#1E2C48]">
                         <span class="text-slate-500 block">Validated Accuracy</span>
                         <span id="fl-global-acc-val" class="text-lg font-black text-emerald-400 block mt-1">85.0%</span>
                     </div>
-                    <div class="bg-slate-950 p-3 rounded-xl border border-slate-800 col-span-1 sm:col-span-2">
+                    <div class="bg-[#0D1524] p-3.5 rounded-2xl border border-[#1E2C48] col-span-1 sm:col-span-2">
                         <span class="text-slate-500 block">Global Model SHA-256 On Ethereum</span>
-                        <span id="fl-global-hash-val" class="text-xs text-cyan-300 block mt-1 truncate">0x4e8a1d2f9b7c3e5a...</span>
+                        <span id="fl-global-hash-val" class="text-xs text-blue-300 block mt-1 truncate">0x4e8a1d2f9b7c3e5a...</span>
                     </div>
                 </div>
             </div>
@@ -832,38 +866,38 @@
         <!-- ========================================== -->
         <section id="tab-blockchain" class="hidden space-y-6">
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-                <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl shadow">
+                <div class="bg-[#121A2D] border border-[#1E2C48] p-5 rounded-2xl shadow">
                     <span class="text-xs text-slate-400 block">Total Blocks Mined</span>
-                    <span id="bc-total-blocks" class="text-2xl font-black text-cyan-400">--</span>
+                    <span id="bc-total-blocks" class="text-2xl font-black text-blue-400">--</span>
                 </div>
-                <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl shadow">
+                <div class="bg-[#121A2D] border border-[#1E2C48] p-5 rounded-2xl shadow">
                     <span class="text-xs text-slate-400 block">Smart Contract Address</span>
                     <span id="bc-contract-addr" class="text-xs font-mono text-emerald-400 block mt-2 truncate">0x5FbDB231...</span>
                 </div>
-                <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl shadow">
+                <div class="bg-[#121A2D] border border-[#1E2C48] p-5 rounded-2xl shadow">
                     <span class="text-xs text-slate-400 block">Consensus Protocol</span>
                     <span class="text-xs font-semibold text-purple-400 block mt-2">Lightweight PoS + BFT</span>
                 </div>
-                <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl shadow">
+                <div class="bg-[#121A2D] border border-[#1E2C48] p-5 rounded-2xl shadow">
                     <span class="text-xs text-slate-400 block">Ethereum Ganache Link</span>
                     <span id="bc-ganache-status" class="text-xs font-bold text-amber-400 block mt-2">Checking RPC...</span>
                 </div>
-                <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl shadow">
+                <div class="bg-[#121A2D] border border-[#1E2C48] p-5 rounded-2xl shadow">
                     <span class="text-xs text-slate-400 block">Relational Database Engine</span>
-                    <span id="db-engine-status" class="text-xs font-bold text-cyan-400 block mt-2">Checking MySQL...</span>
+                    <span id="db-engine-status" class="text-xs font-bold text-blue-400 block mt-2">Checking MySQL...</span>
                 </div>
             </div>
 
-            <div class="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden shadow-xl">
+            <div class="bg-[#121A2D] border border-[#1E2C48] rounded-3xl overflow-hidden shadow-xl">
                 <div class="p-4 border-b border-slate-800 flex items-center justify-between">
                     <div>
                         <h3 class="text-base font-bold text-white flex items-center gap-2">
                             <span>Verifiable On-Chain Block Explorer</span>
-                            <span class="text-xs bg-slate-800 text-cyan-400 border border-cyan-800 px-2 py-0.5 rounded font-mono">SecureHealthRegistry.sol</span>
+                            <span class="text-xs bg-slate-800 text-blue-400 border border-blue-800 px-2 py-0.5 rounded font-mono">SecureHealthRegistry.sol</span>
                         </h3>
                         <p class="text-xs text-slate-400">Cryptographically linked blocks anchoring EHR record hashes & FL training rounds.</p>
                     </div>
-                    <button onclick="fetchBlocks()" class="text-xs text-cyan-400 hover:underline">
+                    <button onclick="fetchBlocks()" class="text-xs text-blue-400 hover:text-blue-300 hover:underline">
                         🔄 Refresh Chain
                     </button>
                 </div>
@@ -877,8 +911,8 @@
     </main>
 
     <!-- Create EHR Modal -->
-    <div id="create-modal" class="hidden fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-        <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-4">
+    <div id="create-modal" class="hidden fixed inset-0 bg-[#0A0F1D]/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="bg-[#121A2D] border border-[#1E2C48] rounded-3xl max-w-lg w-full p-6 shadow-2xl space-y-4">
             <div class="flex items-center justify-between border-b border-slate-800 pb-3">
                 <h3 class="text-lg font-bold text-white">Create & Blockchain-Seal EHR</h3>
                 <button onclick="closeCreateModal()" class="text-slate-400 hover:text-white">✕</button>
@@ -887,35 +921,35 @@
             <div class="space-y-3 text-xs">
                 <div>
                     <label class="block font-semibold text-slate-400 mb-1">Registered Patient</label>
-                    <select id="modal-patient-id" required class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-white"></select>
+                    <select id="modal-patient-id" required class="w-full bg-[#0D1524] border border-[#1E2C48] rounded-lg px-3 py-2 text-white"></select>
                 </div>
                 <div>
                     <label class="block font-semibold text-slate-400 mb-1">Hospital / Clinic</label>
-                    <input type="text" id="modal-hospital-name" value="Assigned from doctor account" readonly class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-slate-400">
+                    <input type="text" id="modal-hospital-name" value="Assigned from doctor account" readonly class="w-full bg-[#0D1524] border border-[#1E2C48] rounded-lg px-3 py-2 text-slate-400">
                 </div>
                 <div>
                     <label class="block font-semibold text-slate-400 mb-1">Clinical Diagnosis</label>
-                    <input type="text" id="modal-diagnosis" value="Cardiovascular Routine Screening - Normal Sinus" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-white">
+                    <input type="text" id="modal-diagnosis" value="Cardiovascular Routine Screening - Normal Sinus" class="w-full bg-[#0D1524] border border-[#1E2C48] rounded-lg px-3 py-2 text-white">
                 </div>
                 <div class="grid grid-cols-2 gap-3">
-                    <div><label class="block font-semibold text-slate-400 mb-1">Age (years)</label><input type="number" id="modal-age" min="0" max="120" value="48" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-white"></div>
+                    <div><label class="block font-semibold text-slate-400 mb-1">Age (years)</label><input type="number" id="modal-age" min="0" max="120" value="48" class="w-full bg-[#0D1524] border border-[#1E2C48] rounded-lg px-3 py-2 text-white"></div>
                     <div>
                         <label class="block font-semibold text-slate-400 mb-1">Systolic BP</label>
-                        <input type="number" id="modal-bp" value="122" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-white">
+                        <input type="number" id="modal-bp" value="122" class="w-full bg-[#0D1524] border border-[#1E2C48] rounded-lg px-3 py-2 text-white">
                     </div>
                     <div>
                         <label class="block font-semibold text-slate-400 mb-1">Cholesterol (mg/dl)</label>
-                        <input type="number" id="modal-chol" value="195" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-white">
+                        <input type="number" id="modal-chol" value="195" class="w-full bg-[#0D1524] border border-[#1E2C48] rounded-lg px-3 py-2 text-white">
                     </div>
-                    <div><label class="block font-semibold text-slate-400 mb-1">Heart rate (bpm)</label><input type="number" id="modal-hr" min="20" max="250" value="72" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-white"></div>
-                    <div><label class="block font-semibold text-slate-400 mb-1">Blood glucose (mg/dL)</label><input type="number" id="modal-glucose" min="0" max="1000" value="95" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-white"></div>
-                    <div><label class="block font-semibold text-slate-400 mb-1">Oxygen saturation (%)</label><input type="number" id="modal-spo2" min="0" max="100" value="98" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-white"></div>
+                    <div><label class="block font-semibold text-slate-400 mb-1">Heart rate (bpm)</label><input type="number" id="modal-hr" min="20" max="250" value="72" class="w-full bg-[#0D1524] border border-[#1E2C48] rounded-lg px-3 py-2 text-white"></div>
+                    <div><label class="block font-semibold text-slate-400 mb-1">Blood glucose (mg/dL)</label><input type="number" id="modal-glucose" min="0" max="1000" value="95" class="w-full bg-[#0D1524] border border-[#1E2C48] rounded-lg px-3 py-2 text-white"></div>
+                    <div><label class="block font-semibold text-slate-400 mb-1">Oxygen saturation (%)</label><input type="number" id="modal-spo2" min="0" max="100" value="98" class="w-full bg-[#0D1524] border border-[#1E2C48] rounded-lg px-3 py-2 text-white"></div>
                 </div>
             </div>
 
             <div class="pt-3 border-t border-slate-800 flex justify-end gap-3">
                 <button onclick="closeCreateModal()" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-xs font-semibold">Cancel</button>
-                <button onclick="submitNewEHR()" class="px-4 py-2 bg-gradient-to-r from-cyan-600 to-emerald-600 hover:from-cyan-500 hover:to-emerald-500 text-white rounded-lg text-xs font-bold shadow">
+                <button onclick="submitNewEHR()" class="px-4 py-2 bg-gradient-to-r from-[#0381FE] to-[#1428A0] hover:from-blue-600 hover:to-indigo-700 text-white rounded-lg text-xs font-bold shadow">
                     🔐 Anchor Hash to Blockchain & Generate QR
                 </button>
             </div>
@@ -923,13 +957,13 @@
     </div>
 
     <!-- QR Code Preview Modal -->
-    <div id="qr-modal" class="hidden fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-        <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-sm w-full p-6 shadow-2xl text-center space-y-4">
+    <div id="qr-modal" class="hidden fixed inset-0 bg-[#0A0F1D]/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="bg-[#121A2D] border border-[#1E2C48] rounded-3xl max-w-sm w-full p-6 shadow-2xl text-center space-y-4">
             <h3 class="text-base font-bold text-white">Blockchain Cryptographic QR Code</h3>
             <div class="p-4 bg-white rounded-xl inline-block shadow-lg mx-auto">
                 <img id="qr-modal-img" src="" alt="EHR QR Code" class="w-48 h-48 mx-auto">
             </div>
-            <p id="qr-modal-uuid" class="text-xs font-mono text-cyan-400">EHR-UUID</p>
+            <p id="qr-modal-uuid" class="text-xs font-mono text-blue-400">EHR-UUID</p>
             <p class="text-xs text-slate-400">Scan this QR code during clinical checks to immediately verify against the Ethereum Ganache ledger.</p>
             <button onclick="closeQRModal()" class="w-full py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-lg text-xs font-semibold">
                 Close
@@ -968,13 +1002,13 @@
             if (mode === 'signin') {
                 formSignin.classList.remove('hidden');
                 formRegister.classList.add('hidden');
-                tabSignin.className = "flex-1 py-2 rounded-lg bg-cyan-600 text-white transition";
+                tabSignin.className = "flex-1 py-2 rounded-xl bg-[#0381FE] text-white shadow font-semibold transition";
                 tabRegister.className = "flex-1 py-2 rounded-lg text-slate-400 hover:text-white transition";
             } else {
                 formSignin.classList.add('hidden');
                 formRegister.classList.remove('hidden');
                 tabSignin.className = "flex-1 py-2 rounded-lg text-slate-400 hover:text-white transition";
-                tabRegister.className = "flex-1 py-2 rounded-lg bg-cyan-600 text-white transition";
+                tabRegister.className = "flex-1 py-2 rounded-xl bg-[#0381FE] text-white shadow font-semibold transition";
             }
         }
 
@@ -1092,7 +1126,7 @@
             }
 
             document.querySelectorAll('.tab-btn').forEach(btn => {
-                btn.classList.remove('border-cyan-500', 'text-cyan-400');
+                btn.classList.remove('border-[#0381FE]', 'text-blue-400');
                 btn.classList.add('border-transparent', 'text-slate-400');
             });
             const activeNav = {
@@ -1106,7 +1140,7 @@
             }[tabId];
             const activeNavEl = document.getElementById(activeNav);
             if (activeNavEl) {
-                activeNavEl.classList.add('border-cyan-500', 'text-cyan-400');
+                activeNavEl.classList.add('border-[#0381FE]', 'text-blue-400');
                 activeNavEl.classList.remove('border-transparent', 'text-slate-400');
             }
 
@@ -1228,7 +1262,7 @@
                     }
                 } else {
                     pill.textContent = 'Update Ready to Push';
-                    pill.className = 'text-xs font-semibold bg-cyan-950 text-cyan-400 border border-cyan-800 px-2.5 py-1 rounded-lg';
+                    pill.className = 'text-xs font-semibold bg-cyan-950 text-blue-400 border border-blue-800 px-2.5 py-1 rounded-lg';
                 }
             }
         }
@@ -1251,7 +1285,7 @@
                 term.scrollTop = term.scrollHeight;
             };
 
-            appendLog('[1/4] Extracting local hospital patient vitals from secure database...', 'text-cyan-400');
+            appendLog('[1/4] Extracting local hospital patient vitals from secure database...', 'text-blue-400');
             appendLog('[*] Zero-knowledge rule active: Raw EHR records are locked to this node.', 'text-slate-400');
 
             const epochs = parseInt(document.getElementById('edge-epochs')?.value) || 5;
@@ -1266,9 +1300,9 @@
                 const data = await res.json();
                 if (!res.ok || !data.success) throw new Error(data.message || 'Local training failed');
 
-                appendLog(`[1/4] Extracted ${data.result.custom_records_count || 1} entered patient record(s) directly from hospital database.`, 'text-cyan-300 font-bold');
+                appendLog(`[1/4] Extracted ${data.result.custom_records_count || 1} entered patient record(s) directly from hospital database.`, 'text-blue-300 font-bold');
                 appendLog(`[*] Active local training batch: ${data.result.samples_count} patient vitals vectors (Age, BP, Chol, MaxHR, FBS, Angina).`, 'text-slate-300');
-                appendLog(`[2/4] Executing ${epochs} local epochs with Cross-Entropy Loss & Adam Optimizer...`, 'text-cyan-400');
+                appendLog(`[2/4] Executing ${epochs} local epochs with Cross-Entropy Loss & Adam Optimizer...`, 'text-blue-400');
                 appendLog(`[3/4] Gradient clipping applied (C = 1.0). Injected Gaussian DP Noise (ε = ${epsilon}, σ = ${data.result.noise_scale_sigma})...`, 'text-purple-400');
                 appendLog(`[4/4] Local Training Complete! Loss: ${data.result.local_loss} · Accuracy: ${data.result.local_accuracy}%`, 'text-emerald-400');
                 appendLog(`[Hash] Cryptographic Model Update Hash: ${data.result.update_hash}`, 'text-amber-300');
@@ -1314,9 +1348,9 @@
                 if (!res.ok || !data.success) throw new Error(data.message || 'Push failed');
 
                 appendLog(`[Blockchain] Mined on Ethereum Ganache block #${data.block_number} with action MODEL_UPDATE`, 'text-emerald-400');
-                appendLog(`[TxHash] ${data.tx_hash}`, 'text-cyan-300 font-mono');
+                appendLog(`[TxHash] ${data.tx_hash}`, 'text-blue-300 font-mono');
                 appendLog(`[Central Server Gate] Cryptographic SHA-256 hash verified authentic against SecureHealthRegistry.sol!`, 'text-emerald-400 font-bold');
-                appendLog(`[Aggregator] Admitted into FedAvg aggregation pool for Global Round #${data.round_number}. Ready for central broadcast!`, 'text-cyan-300');
+                appendLog(`[Aggregator] Admitted into FedAvg aggregation pool for Global Round #${data.round_number}. Ready for central broadcast!`, 'text-blue-300');
 
                 const receiptEl = document.getElementById('edge-blockchain-receipt');
                 if (receiptEl) receiptEl.classList.remove('hidden');
@@ -1357,7 +1391,7 @@
 
                 records.forEach(record => {
                     const card = document.createElement('article');
-                    card.className = 'bg-slate-900 border border-slate-800 rounded-xl p-5 shadow space-y-3';
+                    card.className = 'bg-[#121A2D] border border-[#1E2C48] rounded-3xl p-5 shadow space-y-3';
 
                     const title = document.createElement('h3');
                     title.className = 'text-lg font-bold text-white';
@@ -1398,14 +1432,14 @@
                     const actions = document.createElement('div');
                     actions.className = 'flex flex-wrap gap-2';
                     const verifyButton = document.createElement('button');
-                    verifyButton.className = 'px-3 py-2 rounded-lg bg-cyan-700 hover:bg-cyan-600 text-sm font-semibold text-white';
+                    verifyButton.className = 'px-3.5 py-2 rounded-xl bg-[#0381FE] hover:bg-blue-600 text-sm font-semibold text-white shadow transition';
                     verifyButton.textContent = 'Verify my record';
                     verifyButton.addEventListener('click', () => verifyPatientRecord(record.record_uuid, result));
                     actions.appendChild(verifyButton);
 
                     if (record.qr_code_url) {
                         const qrButton = document.createElement('button');
-                        qrButton.className = 'px-3 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-sm text-cyan-300 border border-slate-700';
+                        qrButton.className = 'px-3.5 py-2 rounded-xl bg-[#0D1524] hover:bg-slate-800 text-sm text-blue-300 border border-[#1E2C48] transition';
                         qrButton.textContent = 'View QR code';
                         qrButton.addEventListener('click', () => viewQRCode(record.qr_code_url, record.record_uuid));
                         actions.appendChild(qrButton);
@@ -1454,7 +1488,7 @@
                     const tr = document.createElement('tr');
                     tr.className = "hover:bg-slate-800/40 transition";
                     tr.innerHTML = `
-                        <td class="px-4 py-3 font-mono font-semibold text-cyan-400">${r.record_uuid}</td>
+                        <td class="px-4 py-3 font-mono font-semibold text-blue-400">${r.record_uuid}</td>
                         <td class="px-4 py-3 font-medium text-white">${r.patient_name || 'Aswin Krishna'}</td>
                         <td class="px-4 py-3 text-xs text-slate-400">${r.hospital_name}</td>
                         <td class="px-4 py-3 text-xs text-slate-200">${r.diagnosis}</td>
@@ -1466,10 +1500,10 @@
                             </span>
                         </td>
                         <td class="px-4 py-3 text-right space-x-2">
-                            <button onclick="viewQRCode('${r.qr_code_url}', '${r.record_uuid}')" class="text-xs bg-slate-800 hover:bg-slate-700 text-cyan-400 px-2.5 py-1 rounded border border-slate-700">
+                            <button onclick="viewQRCode('${r.qr_code_url}', '${r.record_uuid}')" class="text-xs bg-[#0D1524] hover:bg-slate-800 text-blue-300 px-2.5 py-1 rounded border border-[#1E2C48]">
                                 📱 QR Code
                             </button>
-                            <button onclick="verifyThisRecord('${r.record_uuid}')" class="text-xs bg-cyan-950 hover:bg-cyan-900 text-cyan-300 px-2.5 py-1 rounded border border-cyan-800">
+                            <button onclick="verifyThisRecord('${r.record_uuid}')" class="text-xs bg-blue-950 hover:bg-blue-900 text-blue-300 px-2.5 py-1 rounded border border-blue-800">
                                 🔍 Verify
                             </button>
                         </td>
@@ -1548,7 +1582,7 @@
 
                 if (data.model) {
                     const liModel = document.createElement('li');
-                    liModel.className = 'font-bold text-cyan-300';
+                    liModel.className = 'font-bold text-blue-300';
                     liModel.textContent = `Diagnostic Engine: ${data.model} (Validated Accuracy: ${data.held_out_accuracy}%)`;
                     list.appendChild(liModel);
                 }
@@ -1638,7 +1672,7 @@
                     if (dotEl) dotEl.className = 'w-2 h-2 rounded-full bg-cyan-400';
                     if (bcGanacheEl) {
                         bcGanacheEl.textContent = '⚡ Local Fallback Ledger';
-                        bcGanacheEl.className = 'text-xs font-bold text-cyan-400 block mt-2';
+                        bcGanacheEl.className = 'text-xs font-bold text-blue-400 block mt-2';
                     }
                 }
                 if (bcTotalBlocks && data.latest_block_number != null) {
@@ -1676,10 +1710,10 @@
                 const terminal = document.getElementById('fl-log-terminal');
                 terminal.replaceChildren();
                 (state.history || []).slice().reverse().slice(0, 3).forEach(round => {
-                    appendFLLog(`Round ${round.round} · global model hash: ${round.global_model_hash || '—'} (Ethereum Block: #${round.global_ledger_block || '--'})`, 'text-cyan-300');
+                    appendFLLog(`Round ${round.round} · global model hash: ${round.global_model_hash || '—'} (Ethereum Block: #${round.global_ledger_block || '--'})`, 'text-blue-300');
                     (round.node_updates || []).forEach(node => appendFLLog(`  ${node.hospital} · update hash: ${node.update_hash || '—'} · holdout acc: ${node.local_accuracy || '--'}%`, 'text-slate-400'));
                 });
-                if (!state.history?.length) appendFLLog('[*] Central Server Ready. Review verified incoming updates above and click "Run FedAvg & Broadcast Global Model".', 'text-cyan-400');
+                if (!state.history?.length) appendFLLog('[*] Central Server Ready. Review verified incoming updates above and click "Run FedAvg & Broadcast Global Model".', 'text-blue-400');
             } catch (error) {
                 appendFLLog(`Could not load FL status: ${error.message || error}`, 'text-rose-400');
             }
@@ -1697,7 +1731,7 @@
                 const updates = data.incoming_updates || [];
                 updates.forEach(u => {
                     const card = document.createElement('div');
-                    card.className = "bg-slate-950 p-4 rounded-xl border border-slate-800 space-y-2.5";
+                    card.className = "bg-[#0D1524] p-4 rounded-2xl border border-[#1E2C48] space-y-2.5";
                     card.innerHTML = `
                         <div class="flex items-center justify-between border-b border-slate-800/80 pb-2">
                             <div>
@@ -1711,14 +1745,14 @@
                         <div class="space-y-1 text-xs font-mono">
                             <div class="text-slate-400 text-[11px] truncate">
                                 <span class="text-slate-500">Update Hash: </span>
-                                <span class="text-cyan-300">${u.update_hash}</span>
+                                <span class="text-blue-300">${u.update_hash}</span>
                             </div>
                             <div class="flex items-center justify-between text-[11px] text-slate-400 pt-1">
                                 <span>Training Samples: <strong class="text-slate-200">${u.samples}</strong></span>
                                 <span>DP Noise: <strong class="text-amber-400">ε=${u.epsilon || 1.0}, σ=${u.noise_sigma || 0.24}</strong></span>
                             </div>
                         </div>
-                        <div class="bg-slate-900 p-2.5 rounded-lg text-[10px] text-slate-400 border border-slate-800/60 space-y-1">
+                        <div class="bg-[#0D1524] p-2.5 rounded-xl text-[10px] text-slate-400 border border-slate-800/60 space-y-1">
                             <div class="flex items-center justify-between">
                                 <span class="text-slate-500">Blockchain Commitment:</span>
                                 <span class="text-emerald-400 font-semibold">${u.tx_hash ? 'Anchored on Ethereum' : 'On-Chain Pending'}</span>
@@ -1726,7 +1760,7 @@
                             <p class="text-slate-300">${u.verification_details || 'Hash verified against edge node signature and on-chain commitment.'}</p>
                             <div class="flex items-center justify-between pt-1 border-t border-slate-800 text-[10px]">
                                 <span class="text-slate-500">Central Verification Gate:</span>
-                                <span class="text-cyan-400 font-bold">${u.status || 'ACCEPTED IN AGGREGATION POOL'}</span>
+                                <span class="text-blue-400 font-bold">${u.status || 'ACCEPTED IN AGGREGATION POOL'}</span>
                             </div>
                         </div>
                     `;
@@ -1781,9 +1815,9 @@
                 }
                 const result = data.results;
                 const lastRound = result.history?.[result.history.length - 1];
-                appendFLLog(`   -> Dataset: ${result.dataset || 'configured sample dataset'}`, 'text-cyan-400');
-                appendFLLog(`   -> Patients: ${result.dataset_summary?.patient_count ?? 'n/a'}; edge nodes: ${result.dataset_summary?.edge_node_count ?? 'n/a'}`, 'text-cyan-400');
-                appendFLLog(`   -> Target: ${result.dataset_summary?.target ?? 'see dataset documentation'}`, 'text-cyan-400');
+                appendFLLog(`   -> Dataset: ${result.dataset || 'configured sample dataset'}`, 'text-blue-400');
+                appendFLLog(`   -> Patients: ${result.dataset_summary?.patient_count ?? 'n/a'}; edge nodes: ${result.dataset_summary?.edge_node_count ?? 'n/a'}`, 'text-blue-400');
+                appendFLLog(`   -> Target: ${result.dataset_summary?.target ?? 'see dataset documentation'}`, 'text-blue-400');
                 appendFLLog(`   -> Rejected ${result.rejected_edge_rows ?? 0} invalid row(s) during preprocessing`, 'text-slate-400');
                 appendFLLog(`   -> Differential privacy: ${result.privacy_note}`, 'text-slate-400');
                 appendFLLog(`   -> Homomorphic encryption: ${result.homomorphic_encryption_note}`, 'text-slate-400');
@@ -1873,7 +1907,7 @@
                     ganacheStatus.className = "text-xs font-bold text-emerald-400 block mt-2";
                 } else {
                     ganacheStatus.innerText = "⚡ PoS-BFT Consensus Active";
-                    ganacheStatus.className = "text-xs font-bold text-cyan-400 block mt-2";
+                    ganacheStatus.className = "text-xs font-bold text-blue-400 block mt-2";
                 }
 
                 const container = document.getElementById('blocks-container');
@@ -1881,11 +1915,11 @@
 
                 data.blocks.forEach(b => {
                     const blockCard = document.createElement('div');
-                    blockCard.className = "p-4 rounded-xl bg-slate-950 border border-slate-800 space-y-2 hover:border-slate-700 transition";
+                    blockCard.className = "p-4 rounded-2xl bg-[#0D1524] border border-[#1E2C48] space-y-2 hover:border-blue-600/40 transition";
                     
                     let txsHtml = b.transactions.map(t => `
-                        <div class="p-2 rounded bg-slate-900 border border-slate-800 text-xs font-mono space-y-1">
-                            <div class="flex items-center justify-between text-cyan-400 font-bold">
+                        <div class="p-2 rounded bg-[#121A2D] border border-[#1E2C48] text-xs font-mono space-y-1">
+                            <div class="flex items-center justify-between text-blue-400 font-bold">
                                 <span>Action: ${t.tx_type}</span>
                                 <span class="text-slate-500 font-normal">${t.timestamp}</span>
                             </div>
@@ -1896,7 +1930,7 @@
 
                     blockCard.innerHTML = `
                         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-1 border-b border-slate-800/80 pb-2">
-                            <span class="font-extrabold text-sm text-cyan-400 font-mono">Block #${b.block_number}</span>
+                            <span class="font-extrabold text-sm text-blue-400 font-mono">Block #${b.block_number}</span>
                             <span class="text-xs text-slate-400 font-mono">Validator: <span class="text-purple-400">${b.validator}</span></span>
                             <span class="text-xs text-slate-500">${b.timestamp}</span>
                         </div>
@@ -1959,11 +1993,11 @@
     </script>
 
     <!-- Global Model Update Review Modal -->
-    <div id="modal-global-model-update" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
-        <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-2xl w-full p-6 shadow-2xl space-y-5">
+    <div id="modal-global-model-update" class="fixed inset-0 bg-[#0A0F1D]/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-[#121A2D] border border-[#1E2C48] rounded-3xl max-w-2xl w-full p-6 shadow-2xl space-y-5">
             <div class="flex items-center justify-between border-b border-slate-800 pb-3">
                 <div class="flex items-center gap-2">
-                    <span class="w-8 h-8 rounded-lg bg-gradient-to-tr from-purple-600 to-cyan-500 flex items-center justify-center text-sm font-bold text-white">🧠</span>
+                    <span class="w-8 h-8 rounded-lg bg-gradient-to-tr from-[#0381FE] to-[#1428A0] flex items-center justify-center text-sm font-bold text-white shadow-md">🧠</span>
                     <div>
                         <h3 class="text-lg font-black text-white" id="modal-fl-title">Global Model Update Details</h3>
                         <p class="text-xs text-slate-400">Federated Intelligence Upgrade · EPP-BCFL Protocol</p>
@@ -1974,25 +2008,25 @@
 
             <!-- Before vs After Growth Grid -->
             <div class="grid grid-cols-2 gap-4">
-                <div class="bg-slate-950 p-4 rounded-xl border border-slate-800 space-y-1">
+                <div class="bg-[#0D1524] p-4 rounded-2xl border border-[#1E2C48] space-y-1">
                     <span class="text-[11px] uppercase font-bold text-slate-500 tracking-wider">Current Doctor Model</span>
                     <span id="modal-current-acc" class="text-2xl font-black text-slate-300 block">74.5%</span>
                     <span class="text-xs text-slate-400 block" id="modal-current-name">Local Hospital Baseline</span>
                     <span class="text-[10px] text-slate-500 block pt-1">Trained only on this hospital's local records</span>
                 </div>
-                <div class="bg-gradient-to-br from-emerald-950/60 to-cyan-950/60 p-4 rounded-xl border border-emerald-700/60 space-y-1">
+                <div class="bg-gradient-to-br from-[#122544] to-[#1428A0]/40 p-4 rounded-2xl border border-blue-500/50 space-y-1">
                     <div class="flex items-center justify-between">
                         <span class="text-[11px] uppercase font-bold text-emerald-400 tracking-wider">New Global Model</span>
                         <span id="modal-growth-tag" class="text-[10px] font-bold bg-emerald-900/80 text-emerald-300 px-2 py-0.5 rounded-full border border-emerald-600">+14.0% Growth</span>
                     </div>
                     <span id="modal-new-acc" class="text-2xl font-black text-emerald-400 block">88.5%</span>
-                    <span class="text-xs text-cyan-300 font-semibold block" id="modal-new-round">Round #1 (FedAvg)</span>
+                    <span class="text-xs text-blue-300 font-semibold block" id="modal-new-round">Round #1 (FedAvg)</span>
                     <span class="text-[10px] text-emerald-300/80 block pt-1">Aggregated across 4 multi-hospital silos</span>
                 </div>
             </div>
 
             <!-- Clinical & Security Description -->
-            <div class="bg-slate-950 rounded-xl p-4 border border-slate-800 text-xs space-y-3">
+            <div class="bg-[#0D1524] rounded-2xl p-4 border border-[#1E2C48] text-xs space-y-3">
                 <div class="space-y-1">
                     <span class="font-bold text-slate-200 block">🔬 Clinical Diagnostic Advantage:</span>
                     <p class="text-slate-400 leading-relaxed" id="modal-clinical-desc">
@@ -2006,7 +2040,7 @@
                     </div>
                     <div>
                         <span class="text-slate-500 block">Blockchain Verification:</span>
-                        <span class="text-cyan-400">Ethereum Ganache Mined</span>
+                        <span class="text-blue-400">Ethereum Ganache Mined</span>
                     </div>
                 </div>
                 <div class="text-[11px] font-mono text-slate-400 truncate pt-1">
@@ -2020,7 +2054,7 @@
                 <button onclick="closeGlobalModelModal()" class="px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-semibold border border-slate-700 transition">
                     Keep Current Local Model
                 </button>
-                <button onclick="applyGlobalModelUpdate(); closeGlobalModelModal();" class="px-5 py-2.5 bg-gradient-to-r from-emerald-600 to-cyan-600 hover:from-emerald-500 hover:to-cyan-500 text-white font-bold rounded-xl text-xs shadow-lg transition flex items-center gap-2">
+                <button onclick="applyGlobalModelUpdate(); closeGlobalModelModal();" class="px-5 py-2.5 bg-gradient-to-r from-[#0381FE] to-[#1428A0] hover:from-blue-600 hover:to-indigo-700 text-white font-bold rounded-xl text-xs shadow-lg transition flex items-center gap-2">
                     <span>✅ Apply Global Model & Boost Accuracy</span>
                 </button>
             </div>
