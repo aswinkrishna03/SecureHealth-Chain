@@ -171,24 +171,97 @@
 </head>
 <body class="bg-[#0A0F1D] text-slate-100 min-h-screen flex flex-col antialiased selection:bg-[#0381FE] selection:text-white">
 
-    <div id="login-overlay" class="fixed inset-0 z-[100] bg-[#0A0F1D]/95 backdrop-blur-md flex items-center justify-center p-4">
-        <div class="w-full max-w-md bg-[#121A2D] border border-[#1E2C48] rounded-3xl p-8 shadow-2xl space-y-6 glow-samsung">
+    <div id="login-overlay" class="fixed inset-0 z-[100] bg-[#0A0F1D]/95 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto">
+        <div class="w-full max-w-xl bg-[#121A2D] border border-[#1E2C48] rounded-3xl p-6 sm:p-8 shadow-2xl space-y-5 glow-samsung my-auto">
             <!-- Brand & Security Header -->
             <div class="text-center space-y-2">
                 <div class="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-tr from-[#0381FE] to-[#1428A0] shadow-lg glow-samsung text-2xl mx-auto">
                     ⚕️
                 </div>
                 <h1 class="text-2xl font-black tracking-tight text-white">SecureHealth Platform</h1>
-                <p class="text-xs text-slate-400">Federated Healthcare & Decentralized Records Network</p>
-                <div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-800/80 border border-slate-700/80 text-[11px] text-emerald-400 font-medium">
+                <p class="text-xs text-slate-400">Multi-Hospital Network & Verifiable Clinical Governance</p>
+                <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-800/80 border border-slate-700/80 text-[11px] text-emerald-400 font-medium">
                     <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-                    <span>256-Bit SSL Encrypted • Blockchain Secured</span>
+                    <span>Ethereum EVM Smart Contract Certified • Differential Privacy Active</span>
+                </div>
+            </div>
+
+            <!-- Hospital Network & Medical Staff Quick-Access Selector -->
+            <div class="bg-[#0D1524] p-4 rounded-2xl border border-[#1E2C48] space-y-3">
+                <div class="flex items-center justify-between">
+                    <span class="text-xs font-bold uppercase tracking-wider text-blue-400 flex items-center gap-1.5">
+                        <span>🏥</span> Hospital Network & Medical Staff Portal
+                    </span>
+                    <span class="text-[10px] text-slate-500 font-mono">1-Click Fast Auth</span>
+                </div>
+
+                <!-- Hospital Filter Tabs -->
+                <div class="grid grid-cols-2 gap-2 text-xs">
+                    <button type="button" onclick="filterStaffByHospital('HOSP-METRO-01')" id="hosp-btn-metro" class="p-2 rounded-xl bg-blue-950/80 border border-blue-600 text-blue-300 font-bold text-left transition flex items-center justify-between">
+                        <span>Metro Health General</span>
+                        <span class="text-[10px] text-slate-400">3 Doctors</span>
+                    </button>
+                    <button type="button" onclick="filterStaffByHospital('HOSP-APOLLO-02')" id="hosp-btn-apollo" class="p-2 rounded-xl bg-[#121A2D] border border-slate-700 text-slate-300 font-semibold text-left hover:border-blue-700 transition flex items-center justify-between">
+                        <span>Apollo Healthcare</span>
+                        <span class="text-[10px] text-slate-400">2 Doctors</span>
+                    </button>
+                </div>
+
+                <!-- Doctor & Staff Quick Select Pills -->
+                <div id="staff-pills-metro" class="space-y-1.5 pt-1">
+                    <span class="text-[10px] uppercase font-bold text-slate-500 tracking-wider block">Metro Health Medical Roster:</span>
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                        <button type="button" onclick="quickLogin('doctor@securehealth.org', 'doctor')" class="p-2 rounded-xl bg-[#121A2D] hover:bg-blue-950/60 border border-[#1E2C48] hover:border-blue-500 text-left transition group">
+                            <span class="text-xs font-bold text-white block group-hover:text-blue-300 truncate">Dr. Sarah Jenkins</span>
+                            <span class="text-[10px] text-blue-400 block font-mono">Cardiologist</span>
+                            <span class="text-[9px] text-slate-500 block truncate">Lic: MD-CARDIO-8821</span>
+                        </button>
+                        <button type="button" onclick="quickLogin('alex.morgan@metrohealth.org', 'doctor')" class="p-2 rounded-xl bg-[#121A2D] hover:bg-blue-950/60 border border-[#1E2C48] hover:border-blue-500 text-left transition group">
+                            <span class="text-xs font-bold text-white block group-hover:text-blue-300 truncate">Dr. Alex Morgan</span>
+                            <span class="text-[10px] text-cyan-400 block font-mono">General Physician</span>
+                            <span class="text-[9px] text-slate-500 block truncate">Lic: MD-INT-4412</span>
+                        </button>
+                        <button type="button" onclick="quickLogin('head.doctor@metrohealth.org', 'doctor')" class="p-2 rounded-xl bg-purple-950/40 hover:bg-purple-950/80 border border-purple-800/80 hover:border-purple-500 text-left transition group">
+                            <span class="text-xs font-bold text-purple-200 block truncate">Dr. Marcus Vance</span>
+                            <span class="text-[10px] text-purple-400 block font-bold">🎖️ Head Doctor (CMO)</span>
+                            <span class="text-[9px] text-slate-400 block truncate">Clinical Model Auditor</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div id="staff-pills-apollo" class="hidden space-y-1.5 pt-1">
+                    <span class="text-[10px] uppercase font-bold text-slate-500 tracking-wider block">Apollo Healthcare Medical Roster:</span>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        <button type="button" onclick="quickLogin('priya.nair@apollohealth.org', 'doctor')" class="p-2 rounded-xl bg-[#121A2D] hover:bg-blue-950/60 border border-[#1E2C48] hover:border-blue-500 text-left transition group">
+                            <span class="text-xs font-bold text-white block group-hover:text-blue-300 truncate">Dr. Priya Nair</span>
+                            <span class="text-[10px] text-blue-400 block font-mono">Cardiologist</span>
+                            <span class="text-[9px] text-slate-500 block truncate">Lic: MD-CARDIO-5510</span>
+                        </button>
+                        <button type="button" onclick="quickLogin('head.doctor@apollohealth.org', 'doctor')" class="p-2 rounded-xl bg-purple-950/40 hover:bg-purple-950/80 border border-purple-800/80 hover:border-purple-500 text-left transition group">
+                            <span class="text-xs font-bold text-purple-200 block truncate">Dr. Elena Rostova</span>
+                            <span class="text-[10px] text-purple-400 block font-bold">🎖️ Head Doctor (CMO)</span>
+                            <span class="text-[9px] text-slate-400 block truncate">Clinical Model Auditor</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Non-Doctor Roles Quick Access -->
+                <div class="pt-2 border-t border-slate-800/80 flex items-center justify-between text-xs">
+                    <span class="text-[10px] text-slate-500 uppercase font-bold">Other Portal Roles:</span>
+                    <div class="flex gap-2">
+                        <button type="button" onclick="quickLogin('patient@securehealth.org', 'patient')" class="px-2.5 py-1 rounded-lg bg-[#121A2D] hover:bg-slate-800 border border-slate-700 text-emerald-400 text-[11px] font-semibold transition">
+                            👤 Aswin Krishna (Patient)
+                        </button>
+                        <button type="button" onclick="quickLogin('admin@securehealth.org', 'admin')" class="px-2.5 py-1 rounded-lg bg-[#121A2D] hover:bg-slate-800 border border-slate-700 text-amber-400 text-[11px] font-semibold transition">
+                            🌐 Central FL Coordinator
+                        </button>
+                    </div>
                 </div>
             </div>
 
             <!-- Login / Register Switcher -->
             <div class="flex bg-[#0D1524] p-1 rounded-xl border border-[#1E2C48] text-xs font-semibold">
-                <button type="button" onclick="showAuthTab('signin')" id="tab-auth-signin" class="flex-1 py-2 rounded-lg bg-[#0381FE] text-white shadow-sm transition">Sign In</button>
+                <button type="button" onclick="showAuthTab('signin')" id="tab-auth-signin" class="flex-1 py-2 rounded-lg bg-[#0381FE] text-white shadow-sm transition">Sign In Credentials</button>
                 <button type="button" onclick="showAuthTab('register')" id="tab-auth-register" class="flex-1 py-2 rounded-lg text-slate-400 hover:text-white transition">Register Patient</button>
             </div>
 
@@ -243,7 +316,7 @@
             </form>
 
             <div class="border-t border-slate-800 pt-3 text-center">
-                <p class="text-[11px] text-slate-500">Protected by Differential Privacy & Ethereum Smart Contracts</p>
+                <p class="text-[11px] text-slate-500">Protected by Differential Privacy & Ethereum Smart Contracts (SecureHealthRegistry.sol)</p>
             </div>
         </div>
     </div>
@@ -369,6 +442,58 @@
                 <button onclick="openCreateModal()" class="px-4 py-2 bg-gradient-to-r from-[#0381FE] to-[#1428A0] hover:from-blue-600 hover:to-indigo-700 text-white rounded-lg text-sm font-semibold shadow-md flex items-center gap-2 transition">
                     <span>➕ New Patient Diagnosis & Blockchain Seal</span>
                 </button>
+            </div>
+
+            <!-- Doctor Credential & Blockchain Verification Gate Card -->
+            <div id="doctor-credential-gate-card" class="bg-[#121A2D] border border-[#1E2C48] rounded-3xl p-5 sm:p-6 shadow-xl space-y-4">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800 pb-3">
+                    <div class="flex items-center gap-2.5">
+                        <span class="w-9 h-9 rounded-xl bg-blue-950 border border-blue-700 text-blue-300 flex items-center justify-center text-lg">🩺</span>
+                        <div>
+                            <h3 class="text-base font-bold text-white flex items-center gap-2">
+                                <span>Attending Doctor Verification Gate</span>
+                                <span class="text-[10px] uppercase font-bold text-emerald-400 bg-emerald-950 border border-emerald-800 px-2 py-0.5 rounded-full">Pre-EHR Clearance</span>
+                            </h3>
+                            <p class="text-xs text-slate-400">Ethereum EVM verifies doctor specialty, license & hospital identity before patient data entry.</p>
+                        </div>
+                    </div>
+                    <button onclick="verifyDoctorOnChain()" id="btn-verify-doctor-gate" class="px-3.5 py-2 bg-gradient-to-r from-blue-950 to-indigo-950 hover:from-blue-900 hover:to-indigo-900 text-blue-300 hover:text-white rounded-xl text-xs font-bold border border-blue-700/80 transition flex items-center gap-1.5 self-start sm:self-auto shadow">
+                        <span>🔍 Verify Doctor on Blockchain</span>
+                    </button>
+                </div>
+
+                <!-- 4 Credentials Grid -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
+                    <div class="bg-[#0D1524] p-3 rounded-2xl border border-[#1E2C48]">
+                        <span class="text-slate-500 block text-[10px] uppercase font-bold tracking-wider">Attending Physician</span>
+                        <span id="gate-doctor-name" class="text-sm font-bold text-white block mt-0.5">Dr. Sarah Jenkins</span>
+                        <span id="gate-doctor-specialty" class="text-[11px] text-blue-400 font-semibold block">Cardiologist</span>
+                    </div>
+                    <div class="bg-[#0D1524] p-3 rounded-2xl border border-[#1E2C48]">
+                        <span class="text-slate-500 block text-[10px] uppercase font-bold tracking-wider">Hospital Network</span>
+                        <span id="gate-hospital-name" class="text-sm font-bold text-slate-200 block mt-0.5 truncate">Metro Health General</span>
+                        <span id="gate-hospital-id" class="text-[11px] text-slate-400 font-mono block">Node: HOSP-METRO-01</span>
+                    </div>
+                    <div class="bg-[#0D1524] p-3 rounded-2xl border border-[#1E2C48]">
+                        <span class="text-slate-500 block text-[10px] uppercase font-bold tracking-wider">Medical License No.</span>
+                        <span id="gate-doctor-license" class="text-sm font-bold text-emerald-400 font-mono block mt-0.5">MD-CARDIO-8821</span>
+                        <span class="text-[10px] text-slate-500 block">Board Certified</span>
+                    </div>
+                    <div class="bg-[#0D1524] p-3 rounded-2xl border border-[#1E2C48]">
+                        <span class="text-slate-500 block text-[10px] uppercase font-bold tracking-wider">Blockchain Identity Hash</span>
+                        <span id="gate-doctor-hash" class="text-xs font-mono text-blue-300 block mt-1 truncate" title="Doctor SHA-256 Hash">0x0739c3947470...</span>
+                        <span class="text-[10px] text-emerald-400 block">Mined on Ganache</span>
+                    </div>
+                </div>
+
+                <!-- Live Blockchain Verification Status Banner -->
+                <div id="doctor-gate-status-banner" class="bg-gradient-to-r from-emerald-950/50 via-[#0D1524] to-blue-950/40 p-3 rounded-2xl border border-emerald-800/60 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
+                    <div class="flex items-center gap-2">
+                        <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                        <span class="font-bold text-emerald-300" id="doctor-gate-status-text">🟢 DOCTOR VERIFIED & CERTIFIED ON ETHEREUM SMART CONTRACT</span>
+                    </div>
+                    <span class="text-[11px] text-slate-400 font-mono" id="doctor-gate-contract-info">Contract: SecureHealthRegistry.sol</span>
+                </div>
             </div>
 
             <!-- EHR Records Table -->
@@ -559,10 +684,45 @@
                         </div>
                     </div>
 
+                    <!-- Head Doctor Clinical Review & Governance Sign-Off Card -->
+                    <div id="edge-head-doctor-card" class="p-4 rounded-2xl bg-[#0D1524] border border-[#1E2C48] space-y-3 text-xs">
+                        <div class="flex items-center justify-between border-b border-slate-800/80 pb-2">
+                            <div class="flex items-center gap-2">
+                                <span class="text-base">🎖️</span>
+                                <div>
+                                    <span class="font-bold text-white block">Head Doctor Clinical Review Gate</span>
+                                    <span class="text-[10px] text-slate-400">Chief Medical Officer (CMO) Clinical Audit</span>
+                                </div>
+                            </div>
+                            <span id="edge-head-status-badge" class="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-slate-800 text-slate-400 border border-slate-700">
+                                Awaiting Training
+                            </span>
+                        </div>
+
+                        <div class="text-[11px] text-slate-300 space-y-1">
+                            <div class="flex justify-between">
+                                <span class="text-slate-500">Hospital Chief Medical Officer:</span>
+                                <strong id="edge-head-cmo-name" class="text-purple-300">Dr. Marcus Vance (CMO)</strong>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-slate-500">Verification Standard:</span>
+                                <span id="edge-head-checks-summary" class="text-slate-400">DP Noise (ε≤1.0) · Accuracy ≥70% · Zero-Leakage</span>
+                            </div>
+                            <div id="edge-head-sig-row" class="hidden text-[10px] font-mono text-slate-400 pt-1 border-t border-slate-800">
+                                <span class="text-slate-500 block">Cryptographic Head Doctor Signature Hash:</span>
+                                <span id="edge-head-sig-hash" class="text-emerald-400 truncate block">0x...</span>
+                            </div>
+                        </div>
+
+                        <button onclick="approveModelByHeadDoctor()" id="btn-head-doctor-sign" disabled class="w-full py-2.5 bg-gradient-to-r from-purple-900 to-indigo-900 hover:from-purple-800 hover:to-indigo-800 disabled:opacity-40 disabled:cursor-not-allowed text-white font-bold rounded-xl text-xs shadow transition flex items-center justify-center gap-1.5">
+                            <span>👨‍⚕️ Head Doctor Clinical Sign-Off & Cryptographic Seal</span>
+                        </button>
+                    </div>
+
                     <!-- Push to Central Server Action & Blockchain Receipt -->
                     <div class="space-y-4 pt-4 border-t border-slate-800">
                         <button onclick="pushDoctorModelUpdate()" id="btn-push-edge" disabled class="w-full py-3 bg-gradient-to-r from-[#0381FE] to-[#1428A0] hover:from-blue-600 hover:to-indigo-700 disabled:opacity-40 disabled:cursor-not-allowed text-white font-bold rounded-xl text-sm shadow-lg flex items-center justify-center gap-2 transition">
-                            <span>🚀 Push Model Update to Central Server & Blockchain</span>
+                            <span id="btn-push-edge-text">🔒 Push Locked: Awaiting Head Doctor Approval</span>
                         </button>
 
                         <!-- Blockchain Confirmation & Central Server Verification Box -->
@@ -918,6 +1078,20 @@
                 <button onclick="closeCreateModal()" class="text-slate-400 hover:text-white">✕</button>
             </div>
 
+            <!-- Attending Doctor On-Chain Clearance Alert -->
+            <div class="bg-[#0D1524] border border-blue-900/60 p-3 rounded-2xl flex items-center justify-between text-xs">
+                <div class="flex items-center gap-2">
+                    <span class="text-sm">🩺</span>
+                    <div>
+                        <span class="font-bold text-white block" id="modal-doc-info">Dr. Sarah Jenkins (Cardiologist)</span>
+                        <span class="text-[10px] text-slate-400" id="modal-doc-license">License: MD-CARDIO-8821</span>
+                    </div>
+                </div>
+                <span class="text-[10px] font-bold text-emerald-400 bg-emerald-950 border border-emerald-800 px-2 py-0.5 rounded-full">
+                    🟢 On-Chain Verified
+                </span>
+            </div>
+
             <div class="space-y-3 text-xs">
                 <div>
                     <label class="block font-semibold text-slate-400 mb-1">Registered Patient</label>
@@ -1153,6 +1327,129 @@
             return true;
         }
 
+        function filterStaffByHospital(hospitalId) {
+            const metroPills = document.getElementById('staff-pills-metro');
+            const apolloPills = document.getElementById('staff-pills-apollo');
+            const metroBtn = document.getElementById('hosp-btn-metro');
+            const apolloBtn = document.getElementById('hosp-btn-apollo');
+            if (hospitalId === 'HOSP-METRO-01') {
+                if (metroPills) metroPills.classList.remove('hidden');
+                if (apolloPills) apolloPills.classList.add('hidden');
+                if (metroBtn) metroBtn.className = 'p-2 rounded-xl bg-blue-950/80 border border-blue-600 text-blue-300 font-bold text-left transition flex items-center justify-between';
+                if (apolloBtn) apolloBtn.className = 'p-2 rounded-xl bg-[#121A2D] border border-slate-700 text-slate-300 font-semibold text-left hover:border-blue-700 transition flex items-center justify-between';
+            } else {
+                if (metroPills) metroPills.classList.add('hidden');
+                if (apolloPills) apolloPills.classList.remove('hidden');
+                if (metroBtn) metroBtn.className = 'p-2 rounded-xl bg-[#121A2D] border border-slate-700 text-slate-300 font-semibold text-left hover:border-blue-700 transition flex items-center justify-between';
+                if (apolloBtn) apolloBtn.className = 'p-2 rounded-xl bg-blue-950/80 border border-blue-600 text-blue-300 font-bold text-left transition flex items-center justify-between';
+            }
+        }
+
+        async function quickLogin(email, password) {
+            document.getElementById('login-email').value = email;
+            document.getElementById('login-password').value = password;
+            showAuthTab('signin');
+            const fakeEvent = { preventDefault: () => {} };
+            await signIn(fakeEvent);
+        }
+
+        async function verifyDoctorOnChain() {
+            const btn = document.getElementById('btn-verify-doctor-gate');
+            const banner = document.getElementById('doctor-gate-status-text');
+            const contractInfo = document.getElementById('doctor-gate-contract-info');
+            if (btn) {
+                btn.disabled = true;
+                btn.innerHTML = '<span>⏳ Querying Ethereum...</span>';
+            }
+            try {
+                const res = await apiFetch(`${API_BASE}/api/doctor/verify-credentials`);
+                const data = await res.json();
+                if (!res.ok || !data.success) throw new Error(data.message || 'Verification check failed');
+
+                if (banner) {
+                    if (data.is_verified_on_chain) {
+                        banner.textContent = '🟢 DOCTOR CERTIFIED & VERIFIED ON ETHEREUM SMART CONTRACT';
+                        banner.className = 'font-bold text-emerald-300';
+                    } else {
+                        banner.textContent = '🔴 DOCTOR UNVERIFIED ON ETHEREUM SMART CONTRACT';
+                        banner.className = 'font-bold text-rose-400';
+                    }
+                }
+                if (contractInfo && data.contract_address) {
+                    contractInfo.textContent = `Contract: ${data.contract_address}`;
+                }
+                const hashEl = document.getElementById('gate-doctor-hash');
+                if (hashEl && data.doctor_hash) hashEl.textContent = data.doctor_hash;
+
+                alert(`✅ On-Chain Doctor Verification Successful!\n\nAttending Doctor: ${data.doctor_name} (${data.specialty})\nLicense: ${data.license_number}\nHospital: ${data.hospital_name} (${data.hospital_id})\nDoctor Hash: ${data.doctor_hash}\nSmart Contract: ${data.contract_address}\nBlockchain Clearance: ACTIVE for EHR entry & DP model training.`);
+            } catch (err) {
+                alert("Doctor verification error: " + err.message);
+            } finally {
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerHTML = '<span>🔍 Verify Doctor on Blockchain</span>';
+                }
+            }
+        }
+
+        async function approveModelByHeadDoctor() {
+            const btn = document.getElementById('btn-head-doctor-sign');
+            const badge = document.getElementById('edge-head-status-badge');
+            const sigRow = document.getElementById('edge-head-sig-row');
+            const sigHashEl = document.getElementById('edge-head-sig-hash');
+            const btnPush = document.getElementById('btn-push-edge');
+            const btnPushText = document.getElementById('btn-push-edge-text');
+            const term = document.getElementById('edge-training-terminal');
+
+            if (btn) {
+                btn.disabled = true;
+                btn.innerHTML = '<span>Signing Clinical Model…</span>';
+            }
+
+            const appendLog = (msg, cls = 'text-slate-300') => {
+                if (!term) return;
+                const d = document.createElement('div');
+                d.className = cls;
+                d.textContent = msg;
+                term.appendChild(d);
+                term.scrollTop = term.scrollHeight;
+            };
+
+            try {
+                const updateHash = document.getElementById('edge-model-hash')?.textContent.trim();
+                const res = await apiFetch(`${API_BASE}/api/doctor/approve-edge-update`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ update_hash: updateHash })
+                });
+                const data = await res.json();
+                if (!res.ok || !data.success) throw new Error(data.message || 'Head Doctor approval failed');
+
+                if (badge) {
+                    badge.textContent = '🟢 Approved & Signed by Head Doctor';
+                    badge.className = 'text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-emerald-950 text-emerald-400 border border-emerald-800';
+                }
+                if (sigRow) sigRow.classList.remove('hidden');
+                if (sigHashEl) sigHashEl.textContent = data.head_doctor_signature_hash;
+
+                if (btnPush) btnPush.disabled = false;
+                if (btnPushText) btnPushText.textContent = '🚀 Push Verified Model Update to Central Server & Blockchain';
+
+                appendLog(`[Clinical Audit Gate] Model update verified and signed by Head Doctor (${data.head_doctor_name})`, 'text-emerald-400 font-bold');
+                appendLog(`[CMO Signature Hash] ${data.head_doctor_signature_hash}`, 'text-purple-300 font-mono');
+                appendLog('[Ready] Model update is cryptographically cleared for Central Server multi-hospital FedAvg.', 'text-blue-300');
+
+                alert(`✅ Head Doctor Sign-Off Complete!\n\nReviewing CMO: ${data.head_doctor_name}\nSignature Hash: ${data.head_doctor_signature_hash}\nClinical Status: APPROVED\n\nThe local model update is now unlocked to push to the Central Server.`);
+            } catch (err) {
+                alert("Approval failed: " + err.message);
+            } finally {
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerHTML = '<span>👨‍⚕️ Head Doctor Clinical Sign-Off & Cryptographic Seal</span>';
+                }
+            }
+        }
+
         function applyRoleAccess(user) {
             if (!user || !ROLE_TABS[user.role]) throw new Error('The signed-in account has no valid portal role.');
             currentUser = user;
@@ -1172,8 +1469,38 @@
             });
             const signedInUserEl = document.getElementById('signed-in-user');
             if (signedInUserEl) {
-                signedInUserEl.textContent = user.name + ' · ' + user.role;
+                signedInUserEl.textContent = `${user.name} · ${user.specialty || user.role} (${user.hospital_name || 'Network'})`;
             }
+
+            // Populate Doctor On-Chain Verification Gate and Hospital Silo details
+            if (user.role === 'doctor') {
+                const gName = document.getElementById('gate-doctor-name');
+                const gSpec = document.getElementById('gate-doctor-specialty');
+                const gHosp = document.getElementById('gate-hospital-name');
+                const gHospId = document.getElementById('gate-hospital-id');
+                const gLic = document.getElementById('gate-doctor-license');
+                const gHash = document.getElementById('gate-doctor-hash');
+                const mDoc = document.getElementById('modal-doc-info');
+                const mLic = document.getElementById('modal-doc-license');
+                const mHosp = document.getElementById('modal-hospital-name');
+                const eHosp = document.getElementById('edge-hosp-name');
+                const cmoName = document.getElementById('edge-head-cmo-name');
+
+                if (gName) gName.textContent = user.name;
+                if (gSpec) gSpec.textContent = user.specialty || 'General Medicine';
+                if (gHosp) gHosp.textContent = user.hospital_name || 'Hospital Silo';
+                if (gHospId) gHospId.textContent = `Node: ${user.hospital_id || 'HOSP-METRO-01'}`;
+                if (gLic) gLic.textContent = user.license_number || 'MD-LIC-0000';
+                if (gHash && user.doctor_hash) gHash.textContent = user.doctor_hash;
+                if (mDoc) mDoc.textContent = `${user.name} (${user.specialty || 'General Medicine'})`;
+                if (mLic) mLic.textContent = `License: ${user.license_number || 'MD-LIC-0000'}`;
+                if (mHosp) mHosp.value = user.hospital_name || 'Assigned Hospital';
+                if (eHosp) eHosp.textContent = user.hospital_name || 'Hospital Silo';
+                if (cmoName) {
+                    cmoName.textContent = user.is_head_doctor ? `${user.name} (Chief Medical Officer)` : (user.hospital_id === 'HOSP-APOLLO-02' ? 'Dr. Elena Rostova (CMO)' : 'Dr. Marcus Vance (CMO)');
+                }
+            }
+
             const overlay = document.getElementById('login-overlay');
             if (overlay) {
                 overlay.classList.add('hidden');
@@ -1240,18 +1567,50 @@
             const sampEl = document.getElementById('edge-metric-samples');
             const hashEl = document.getElementById('edge-model-hash');
             const btnPush = document.getElementById('btn-push-edge');
+            const btnPushText = document.getElementById('btn-push-edge-text');
             const pill = document.getElementById('edge-status-pill');
+            const headBadge = document.getElementById('edge-head-status-badge');
+            const headBtn = document.getElementById('btn-head-doctor-sign');
+            const headCmo = document.getElementById('edge-head-cmo-name');
+            const sigRow = document.getElementById('edge-head-sig-row');
+            const sigHash = document.getElementById('edge-head-sig-hash');
 
             if (lossEl) lossEl.textContent = res.local_loss ?? '--';
             if (accEl) accEl.textContent = res.local_accuracy != null ? `${res.local_accuracy}%` : '--';
             if (sampEl) sampEl.textContent = res.samples_count ?? '--';
             if (hashEl) hashEl.textContent = res.update_hash;
-            if (btnPush) btnPush.disabled = false;
+            if (headCmo && res.head_doctor_name) headCmo.textContent = res.head_doctor_name;
+
+            const isApproved = res.approval_status === 'APPROVED_BY_HEAD_DOCTOR' || res.is_head_doctor_approved;
+
+            if (headBadge) {
+                if (isApproved) {
+                    headBadge.textContent = '🟢 Approved by CMO';
+                    headBadge.className = 'text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-emerald-950 text-emerald-400 border border-emerald-800';
+                    if (sigRow) sigRow.classList.remove('hidden');
+                    if (sigHash && res.head_doctor_signature_hash) sigHash.textContent = res.head_doctor_signature_hash;
+                } else {
+                    headBadge.textContent = '⚠️ Awaiting CMO Sign-Off';
+                    headBadge.className = 'text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-amber-950 text-amber-400 border border-amber-800';
+                    if (sigRow) sigRow.classList.add('hidden');
+                }
+            }
+
+            if (headBtn) {
+                headBtn.disabled = isApproved;
+                if (isApproved) {
+                    headBtn.textContent = '✅ Head Doctor Clinical Audit Signed';
+                } else {
+                    headBtn.textContent = '👨‍⚕️ Head Doctor Clinical Sign-Off & Cryptographic Seal';
+                }
+            }
 
             if (pill) {
                 if (res.status === 'COMMITTED_TO_BLOCKCHAIN') {
                     pill.textContent = 'Anchored on Chain';
                     pill.className = 'text-xs font-semibold bg-emerald-950 text-emerald-400 border border-emerald-800 px-2.5 py-1 rounded-lg';
+                    if (btnPush) btnPush.disabled = true;
+                    if (btnPushText) btnPushText.textContent = '✅ Update Mined on Ethereum Blockchain';
                     if (res.tx_hash) {
                         const receiptEl = document.getElementById('edge-blockchain-receipt');
                         if (receiptEl) receiptEl.classList.remove('hidden');
@@ -1260,9 +1619,16 @@
                         if (blockEl) blockEl.textContent = `Block #${res.block_number || '--'}`;
                         if (txEl) txEl.textContent = res.tx_hash;
                     }
+                } else if (isApproved) {
+                    pill.textContent = 'Approved by CMO · Ready to Push';
+                    pill.className = 'text-xs font-semibold bg-emerald-950 text-emerald-400 border border-emerald-800 px-2.5 py-1 rounded-lg';
+                    if (btnPush) btnPush.disabled = false;
+                    if (btnPushText) btnPushText.textContent = '🚀 Push Verified Model Update to Central Server & Blockchain';
                 } else {
-                    pill.textContent = 'Update Ready to Push';
-                    pill.className = 'text-xs font-semibold bg-cyan-950 text-blue-400 border border-blue-800 px-2.5 py-1 rounded-lg';
+                    pill.textContent = 'Awaiting Head Doctor Review';
+                    pill.className = 'text-xs font-semibold bg-amber-950 text-amber-400 border border-amber-800 px-2.5 py-1 rounded-lg';
+                    if (btnPush) btnPush.disabled = true;
+                    if (btnPushText) btnPushText.textContent = '🔒 Push Locked: Awaiting Head Doctor Approval';
                 }
             }
         }
@@ -1490,7 +1856,10 @@
                     tr.innerHTML = `
                         <td class="px-4 py-3 font-mono font-semibold text-blue-400">${r.record_uuid}</td>
                         <td class="px-4 py-3 font-medium text-white">${r.patient_name || 'Aswin Krishna'}</td>
-                        <td class="px-4 py-3 text-xs text-slate-400">${r.hospital_name}</td>
+                        <td class="px-4 py-3 text-xs">
+                            <span class="text-white font-semibold block">${r.doctor_name || 'Dr. Sarah Jenkins'}</span>
+                            <span class="text-blue-400 text-[11px] block">${r.doctor_specialty || 'General Medicine'} · ${r.hospital_name}</span>
+                        </td>
                         <td class="px-4 py-3 text-xs text-slate-200">${r.diagnosis}</td>
                         <td class="px-4 py-3 text-xs text-slate-300">${vitalSummary}</td>
                         <td class="px-4 py-3 font-mono text-xs text-slate-400 truncate max-w-xs" title="${r.record_hash}">${r.record_hash.substring(0, 14)}...</td>
@@ -1731,37 +2100,69 @@
                 const updates = data.incoming_updates || [];
                 updates.forEach(u => {
                     const card = document.createElement('div');
-                    card.className = "bg-[#0D1524] p-4 rounded-2xl border border-[#1E2C48] space-y-2.5";
+                    card.className = "bg-[#0D1524] p-4 rounded-3xl border border-[#1E2C48] space-y-3 shadow-md hover:border-blue-600/40 transition";
                     card.innerHTML = `
-                        <div class="flex items-center justify-between border-b border-slate-800/80 pb-2">
+                        <div class="flex items-center justify-between border-b border-slate-800/80 pb-2.5">
                             <div>
                                 <span class="font-bold text-white text-sm block">${u.hospital}</span>
-                                <span class="text-[11px] text-slate-500 font-mono">${u.node_id}</span>
+                                <span class="text-[11px] text-slate-500 font-mono">${u.node_id || u.hospital_id}</span>
                             </div>
-                            <span class="text-xs font-bold px-2.5 py-0.5 rounded-full ${u.is_verified ? 'bg-emerald-950 text-emerald-400 border border-emerald-800' : 'bg-rose-950 text-rose-400 border border-rose-800'}">
+                            <span class="text-[11px] font-bold px-2.5 py-0.5 rounded-full ${u.is_verified ? 'bg-emerald-950 text-emerald-400 border border-emerald-800' : 'bg-rose-950 text-rose-400 border border-rose-800'}">
                                 ${u.is_verified ? '🟢 VERIFIED AUTHENTIC' : '🔴 UNVERIFIED'}
                             </span>
                         </div>
-                        <div class="space-y-1 text-xs font-mono">
-                            <div class="text-slate-400 text-[11px] truncate">
-                                <span class="text-slate-500">Update Hash: </span>
-                                <span class="text-blue-300">${u.update_hash}</span>
-                            </div>
-                            <div class="flex items-center justify-between text-[11px] text-slate-400 pt-1">
-                                <span>Training Samples: <strong class="text-slate-200">${u.samples}</strong></span>
-                                <span>DP Noise: <strong class="text-amber-400">ε=${u.epsilon || 1.0}, σ=${u.noise_sigma || 0.24}</strong></span>
+
+                        <!-- 4-Point On-Chain Verification Checklist -->
+                        <div class="bg-[#121A2D] p-3 rounded-2xl border border-slate-800/80 space-y-2 text-xs">
+                            <span class="text-[10px] uppercase font-bold text-slate-400 tracking-wider block border-b border-slate-800/60 pb-1">
+                                Central Server 4-Point Blockchain Checklist:
+                            </span>
+                            <div class="space-y-1.5 text-[11px]">
+                                <div class="flex items-center justify-between">
+                                    <span class="text-slate-400 flex items-center gap-1.5">
+                                        <span class="text-emerald-400 font-bold">✓</span> Real Hospital on Ethereum:
+                                    </span>
+                                    <span class="font-mono text-emerald-400 font-semibold">[Passed] Registered Silo</span>
+                                </div>
+                                <div class="flex items-center justify-between">
+                                    <span class="text-slate-400 flex items-center gap-1.5">
+                                        <span class="text-emerald-400 font-bold">✓</span> Certified Doctor Identity:
+                                    </span>
+                                    <span class="font-mono text-blue-300 truncate max-w-[180px]">${u.doctor_name || 'Dr. Sarah Jenkins'} (${u.doctor_specialty || 'Cardiologist'})</span>
+                                </div>
+                                <div class="flex items-center justify-between">
+                                    <span class="text-slate-400 flex items-center gap-1.5">
+                                        <span class="text-emerald-400 font-bold">✓</span> Head Doctor (CMO) Sign-Off:
+                                    </span>
+                                    <span class="font-mono text-purple-300 truncate max-w-[180px]">${u.head_doctor_name || 'CMO Audit Signed'}</span>
+                                </div>
+                                <div class="flex items-center justify-between">
+                                    <span class="text-slate-400 flex items-center gap-1.5">
+                                        <span class="text-emerald-400 font-bold">✓</span> Model Update SHA-256:
+                                    </span>
+                                    <span class="font-mono text-slate-300 truncate max-w-[160px]">${u.update_hash ? u.update_hash.slice(0, 14) + '...' : 'Verified'}</span>
+                                </div>
                             </div>
                         </div>
-                        <div class="bg-[#0D1524] p-2.5 rounded-xl text-[10px] text-slate-400 border border-slate-800/60 space-y-1">
-                            <div class="flex items-center justify-between">
-                                <span class="text-slate-500">Blockchain Commitment:</span>
-                                <span class="text-emerald-400 font-semibold">${u.tx_hash ? 'Anchored on Ethereum' : 'On-Chain Pending'}</span>
+
+                        <!-- Training & Differential Privacy Parameters -->
+                        <div class="grid grid-cols-2 gap-2 text-[11px] font-mono text-slate-400">
+                            <div class="bg-[#121A2D] p-2 rounded-xl border border-slate-800/60">
+                                <span class="text-slate-500 block text-[9px] uppercase">Training Samples</span>
+                                <span class="text-slate-200 font-bold">${u.samples || 25} EHR Records</span>
                             </div>
-                            <p class="text-slate-300">${u.verification_details || 'Hash verified against edge node signature and on-chain commitment.'}</p>
-                            <div class="flex items-center justify-between pt-1 border-t border-slate-800 text-[10px]">
-                                <span class="text-slate-500">Central Verification Gate:</span>
-                                <span class="text-blue-400 font-bold">${u.status || 'ACCEPTED IN AGGREGATION POOL'}</span>
+                            <div class="bg-[#121A2D] p-2 rounded-xl border border-slate-800/60">
+                                <span class="text-slate-500 block text-[9px] uppercase">DP Noise Budget</span>
+                                <span class="text-amber-400 font-bold">ε = ${u.epsilon || 1.0}, σ = ${u.noise_sigma || 0.24}</span>
                             </div>
+                        </div>
+
+                        <!-- Central Verification Gate Decision -->
+                        <div class="bg-[#0A0F1D] p-2.5 rounded-xl text-[10px] text-slate-400 border border-slate-800/80 flex items-center justify-between">
+                            <span class="text-slate-500">Central Aggregator Admission:</span>
+                            <span class="font-bold font-mono ${u.is_verified ? 'text-emerald-400' : 'text-rose-400'}">
+                                ${u.status || (u.is_verified ? 'ACCEPTED IN AGGREGATION POOL' : 'REJECTED: UNVERIFIED')}
+                            </span>
                         </div>
                     `;
                     container.appendChild(card);

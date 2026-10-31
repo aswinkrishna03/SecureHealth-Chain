@@ -1,15 +1,64 @@
 {
   "contractName": "SecureHealthRegistry",
-  "contractAddress": "0x5f18C8CF1b857ec272B4357C0736b60E61324cd1",
-  "transactionHash": "9affd85e2e9bb7651c11baf887589db1a51df13cc2ab8da1feddbdf87b73a206",
-  "blockNumber": 2,
-  "deployer": "0xB52f7303852B523e4992DE6ED81Cd85Fb875Ff51",
+  "contractAddress": "0xA94B7f0465E98609391C623d0560C5720a3f2D33",
+  "transactionHash": "9c7ae5278f61565605c87cfa11206f7cdbaeea2f62e3f188a6ef81cc9ea7fa70",
+  "blockNumber": 19,
+  "deployer": "0x90F8bf6A479f320ead074411a4B0e7944Ea8c9C1",
   "rpcUrl": "http://127.0.0.1:7545",
   "abi": [
     {
       "inputs": [],
       "stateMutability": "nonpayable",
       "type": "constructor"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "string",
+          "name": "doctorId",
+          "type": "string"
+        },
+        {
+          "indexed": true,
+          "internalType": "string",
+          "name": "hospitalId",
+          "type": "string"
+        },
+        {
+          "indexed": false,
+          "internalType": "string",
+          "name": "doctorName",
+          "type": "string"
+        },
+        {
+          "indexed": false,
+          "internalType": "string",
+          "name": "specialty",
+          "type": "string"
+        },
+        {
+          "indexed": false,
+          "internalType": "bytes32",
+          "name": "doctorHash",
+          "type": "bytes32"
+        },
+        {
+          "indexed": false,
+          "internalType": "bool",
+          "name": "isHeadDoctor",
+          "type": "bool"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "timestamp",
+          "type": "uint256"
+        }
+      ],
+      "name": "DoctorRegistered",
+      "type": "event"
     },
     {
       "anonymous": false,
@@ -72,9 +121,52 @@
       "inputs": [
         {
           "indexed": true,
+          "internalType": "string",
+          "name": "hospitalId",
+          "type": "string"
+        },
+        {
+          "indexed": false,
+          "internalType": "string",
+          "name": "hospitalName",
+          "type": "string"
+        },
+        {
+          "indexed": false,
+          "internalType": "bytes32",
+          "name": "hospitalHash",
+          "type": "bytes32"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "timestamp",
+          "type": "uint256"
+        }
+      ],
+      "name": "HospitalRegistered",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
           "internalType": "uint256",
           "name": "roundNumber",
           "type": "uint256"
+        },
+        {
+          "indexed": true,
+          "internalType": "string",
+          "name": "hospitalId",
+          "type": "string"
+        },
+        {
+          "indexed": false,
+          "internalType": "string",
+          "name": "doctorId",
+          "type": "string"
         },
         {
           "indexed": false,
@@ -83,10 +175,10 @@
           "type": "bytes32"
         },
         {
-          "indexed": true,
-          "internalType": "address",
-          "name": "nodeAddress",
-          "type": "address"
+          "indexed": false,
+          "internalType": "bytes32",
+          "name": "headDoctorSigHash",
+          "type": "bytes32"
         },
         {
           "indexed": false,
@@ -128,14 +220,8 @@
       "type": "function"
     },
     {
-      "inputs": [
-        {
-          "internalType": "uint256",
-          "name": "_round",
-          "type": "uint256"
-        }
-      ],
-      "name": "getRoundUpdateCount",
+      "inputs": [],
+      "name": "getRegisteredHospitalsCount",
       "outputs": [
         {
           "internalType": "uint256",
@@ -160,6 +246,89 @@
           "internalType": "bytes32",
           "name": "",
           "type": "bytes32"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "string",
+          "name": "_doctorId",
+          "type": "string"
+        },
+        {
+          "internalType": "string",
+          "name": "_hospitalId",
+          "type": "string"
+        }
+      ],
+      "name": "isDoctorVerified",
+      "outputs": [
+        {
+          "internalType": "bool",
+          "name": "isVerified",
+          "type": "bool"
+        },
+        {
+          "internalType": "string",
+          "name": "doctorName",
+          "type": "string"
+        },
+        {
+          "internalType": "string",
+          "name": "specialty",
+          "type": "string"
+        },
+        {
+          "internalType": "string",
+          "name": "licenseNumber",
+          "type": "string"
+        },
+        {
+          "internalType": "bytes32",
+          "name": "doctorHash",
+          "type": "bytes32"
+        },
+        {
+          "internalType": "bool",
+          "name": "isHeadDoctor",
+          "type": "bool"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "string",
+          "name": "_hospitalId",
+          "type": "string"
+        }
+      ],
+      "name": "isHospitalRegistered",
+      "outputs": [
+        {
+          "internalType": "bool",
+          "name": "isRegistered",
+          "type": "bool"
+        },
+        {
+          "internalType": "string",
+          "name": "hospitalName",
+          "type": "string"
+        },
+        {
+          "internalType": "bytes32",
+          "name": "hospitalHash",
+          "type": "bytes32"
+        },
+        {
+          "internalType": "address",
+          "name": "nodeAddress",
+          "type": "address"
         }
       ],
       "stateMutability": "view",
@@ -200,6 +369,55 @@
       "inputs": [
         {
           "internalType": "string",
+          "name": "_doctorId",
+          "type": "string"
+        },
+        {
+          "internalType": "string",
+          "name": "_hospitalId",
+          "type": "string"
+        },
+        {
+          "internalType": "string",
+          "name": "_doctorName",
+          "type": "string"
+        },
+        {
+          "internalType": "string",
+          "name": "_specialty",
+          "type": "string"
+        },
+        {
+          "internalType": "string",
+          "name": "_licenseNumber",
+          "type": "string"
+        },
+        {
+          "internalType": "bytes32",
+          "name": "_doctorHash",
+          "type": "bytes32"
+        },
+        {
+          "internalType": "bool",
+          "name": "_isHeadDoctor",
+          "type": "bool"
+        }
+      ],
+      "name": "registerDoctor",
+      "outputs": [
+        {
+          "internalType": "bool",
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "string",
           "name": "_recordUUID",
           "type": "string"
         },
@@ -207,6 +425,16 @@
           "internalType": "bytes32",
           "name": "_recordHash",
           "type": "bytes32"
+        },
+        {
+          "internalType": "string",
+          "name": "_doctorId",
+          "type": "string"
+        },
+        {
+          "internalType": "string",
+          "name": "_hospitalId",
+          "type": "string"
         }
       ],
       "name": "registerEHR",
@@ -223,18 +451,92 @@
     {
       "inputs": [
         {
+          "internalType": "string",
+          "name": "_hospitalId",
+          "type": "string"
+        },
+        {
+          "internalType": "string",
+          "name": "_hospitalName",
+          "type": "string"
+        },
+        {
+          "internalType": "bytes32",
+          "name": "_hospitalHash",
+          "type": "bytes32"
+        }
+      ],
+      "name": "registerHospital",
+      "outputs": [
+        {
+          "internalType": "bool",
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "name": "registeredHospitalIds",
+      "outputs": [
+        {
+          "internalType": "string",
+          "name": "",
+          "type": "string"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
           "internalType": "uint256",
           "name": "_round",
           "type": "uint256"
         },
         {
+          "internalType": "string",
+          "name": "_hospitalId",
+          "type": "string"
+        },
+        {
+          "internalType": "string",
+          "name": "_doctorId",
+          "type": "string"
+        },
+        {
+          "internalType": "string",
+          "name": "_headDoctorId",
+          "type": "string"
+        },
+        {
           "internalType": "bytes32",
           "name": "_modelHash",
           "type": "bytes32"
+        },
+        {
+          "internalType": "bytes32",
+          "name": "_headDoctorSigHash",
+          "type": "bytes32"
         }
       ],
-      "name": "submitModelUpdate",
-      "outputs": [],
+      "name": "submitVerifiedModelUpdate",
+      "outputs": [
+        {
+          "internalType": "bool",
+          "name": "",
+          "type": "bool"
+        }
+      ],
       "stateMutability": "nonpayable",
       "type": "function"
     },
@@ -267,6 +569,65 @@
           "internalType": "address",
           "name": "recordedBy",
           "type": "address"
+        },
+        {
+          "internalType": "string",
+          "name": "doctorId",
+          "type": "string"
+        },
+        {
+          "internalType": "string",
+          "name": "hospitalId",
+          "type": "string"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "string",
+          "name": "_hospitalId",
+          "type": "string"
+        },
+        {
+          "internalType": "string",
+          "name": "_doctorId",
+          "type": "string"
+        },
+        {
+          "internalType": "string",
+          "name": "_headDoctorId",
+          "type": "string"
+        },
+        {
+          "internalType": "bytes32",
+          "name": "_modelHash",
+          "type": "bytes32"
+        }
+      ],
+      "name": "verifyHospitalAndDoctorModel",
+      "outputs": [
+        {
+          "internalType": "bool",
+          "name": "isHospitalValid",
+          "type": "bool"
+        },
+        {
+          "internalType": "bool",
+          "name": "isDoctorValid",
+          "type": "bool"
+        },
+        {
+          "internalType": "bool",
+          "name": "isHeadDoctorValid",
+          "type": "bool"
+        },
+        {
+          "internalType": "bool",
+          "name": "isModelHashCommitted",
+          "type": "bool"
         }
       ],
       "stateMutability": "view",
