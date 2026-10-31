@@ -186,14 +186,19 @@
                 </div>
             </div>
 
-            <!-- Hospital Network & Medical Staff Quick-Access Selector -->
+            <!-- Hospital Network & Medical Staff Profile Selector -->
             <div class="bg-[#0D1524] p-4 rounded-2xl border border-[#1E2C48] space-y-3">
                 <div class="flex items-center justify-between">
                     <span class="text-xs font-bold uppercase tracking-wider text-blue-400 flex items-center gap-1.5">
-                        <span>🏥</span> Hospital Network & Medical Staff Portal
+                        <span>🏥</span> Medical Staff & Role Directory
                     </span>
-                    <span class="text-[10px] text-slate-500 font-mono">1-Click Fast Auth</span>
+                    <span class="text-[10px] text-amber-400 font-mono flex items-center gap-1 bg-amber-950/60 px-2 py-0.5 rounded-full border border-amber-800/80">
+                        <span>🔒</span> Password Required
+                    </span>
                 </div>
+                <p class="text-[11px] text-slate-400 leading-snug">
+                    Select a staff member below to load their Healthcare ID. In compliance with clinical security standards, <strong class="text-slate-200">password authentication is strictly required</strong> for all logins.
+                </p>
 
                 <!-- Hospital Filter Tabs -->
                 <div class="grid grid-cols-2 gap-2 text-xs">
@@ -207,22 +212,31 @@
                     </button>
                 </div>
 
-                <!-- Doctor & Staff Quick Select Pills -->
+                <!-- Doctor & Staff Profile Selector Cards -->
                 <div id="staff-pills-metro" class="space-y-1.5 pt-1">
                     <span class="text-[10px] uppercase font-bold text-slate-500 tracking-wider block">Metro Health Medical Roster:</span>
                     <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                        <button type="button" onclick="quickLogin('doctor@securehealth.org', 'doctor')" class="p-2 rounded-xl bg-[#121A2D] hover:bg-blue-950/60 border border-[#1E2C48] hover:border-blue-500 text-left transition group">
-                            <span class="text-xs font-bold text-white block group-hover:text-blue-300 truncate">Dr. Sarah Jenkins</span>
+                        <button type="button" onclick="selectStaffProfile('doctor@securehealth.org', 'Dr. Sarah Jenkins', 'Cardiologist', 'Metro Health General', 'MD-CARDIO-8821')" class="p-2 rounded-xl bg-[#121A2D] hover:bg-blue-950/60 border border-[#1E2C48] hover:border-blue-500 text-left transition group">
+                            <div class="flex items-center justify-between">
+                                <span class="text-xs font-bold text-white group-hover:text-blue-300 truncate">Dr. Sarah Jenkins</span>
+                                <span class="text-[9px] text-blue-400 opacity-70 group-hover:opacity-100 font-medium">Select ➜</span>
+                            </div>
                             <span class="text-[10px] text-blue-400 block font-mono">Cardiologist</span>
                             <span class="text-[9px] text-slate-500 block truncate">Lic: MD-CARDIO-8821</span>
                         </button>
-                        <button type="button" onclick="quickLogin('alex.morgan@metrohealth.org', 'doctor')" class="p-2 rounded-xl bg-[#121A2D] hover:bg-blue-950/60 border border-[#1E2C48] hover:border-blue-500 text-left transition group">
-                            <span class="text-xs font-bold text-white block group-hover:text-blue-300 truncate">Dr. Alex Morgan</span>
+                        <button type="button" onclick="selectStaffProfile('alex.morgan@metrohealth.org', 'Dr. Alex Morgan', 'General Physician', 'Metro Health General', 'MD-INT-4412')" class="p-2 rounded-xl bg-[#121A2D] hover:bg-blue-950/60 border border-[#1E2C48] hover:border-blue-500 text-left transition group">
+                            <div class="flex items-center justify-between">
+                                <span class="text-xs font-bold text-white group-hover:text-blue-300 truncate">Dr. Alex Morgan</span>
+                                <span class="text-[9px] text-blue-400 opacity-70 group-hover:opacity-100 font-medium">Select ➜</span>
+                            </div>
                             <span class="text-[10px] text-cyan-400 block font-mono">General Physician</span>
                             <span class="text-[9px] text-slate-500 block truncate">Lic: MD-INT-4412</span>
                         </button>
-                        <button type="button" onclick="quickLogin('head.doctor@metrohealth.org', 'doctor')" class="p-2 rounded-xl bg-purple-950/40 hover:bg-purple-950/80 border border-purple-800/80 hover:border-purple-500 text-left transition group">
-                            <span class="text-xs font-bold text-purple-200 block truncate">Dr. Marcus Vance</span>
+                        <button type="button" onclick="selectStaffProfile('head.doctor@metrohealth.org', 'Dr. Marcus Vance', 'Head Doctor (CMO)', 'Metro Health General', 'CMO-METRO-01')" class="p-2 rounded-xl bg-purple-950/40 hover:bg-purple-950/80 border border-purple-800/80 hover:border-purple-500 text-left transition group">
+                            <div class="flex items-center justify-between">
+                                <span class="text-xs font-bold text-purple-200 truncate">Dr. Marcus Vance</span>
+                                <span class="text-[9px] text-purple-400 opacity-70 group-hover:opacity-100 font-medium">Select ➜</span>
+                            </div>
                             <span class="text-[10px] text-purple-400 block font-bold">🎖️ Head Doctor (CMO)</span>
                             <span class="text-[9px] text-slate-400 block truncate">Clinical Model Auditor</span>
                         </button>
@@ -232,27 +246,33 @@
                 <div id="staff-pills-apollo" class="hidden space-y-1.5 pt-1">
                     <span class="text-[10px] uppercase font-bold text-slate-500 tracking-wider block">Apollo Healthcare Medical Roster:</span>
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                        <button type="button" onclick="quickLogin('priya.nair@apollohealth.org', 'doctor')" class="p-2 rounded-xl bg-[#121A2D] hover:bg-blue-950/60 border border-[#1E2C48] hover:border-blue-500 text-left transition group">
-                            <span class="text-xs font-bold text-white block group-hover:text-blue-300 truncate">Dr. Priya Nair</span>
+                        <button type="button" onclick="selectStaffProfile('priya.nair@apollohealth.org', 'Dr. Priya Nair', 'Cardiologist', 'Apollo Healthcare', 'MD-CARDIO-5510')" class="p-2 rounded-xl bg-[#121A2D] hover:bg-blue-950/60 border border-[#1E2C48] hover:border-blue-500 text-left transition group">
+                            <div class="flex items-center justify-between">
+                                <span class="text-xs font-bold text-white group-hover:text-blue-300 truncate">Dr. Priya Nair</span>
+                                <span class="text-[9px] text-blue-400 opacity-70 group-hover:opacity-100 font-medium">Select ➜</span>
+                            </div>
                             <span class="text-[10px] text-blue-400 block font-mono">Cardiologist</span>
                             <span class="text-[9px] text-slate-500 block truncate">Lic: MD-CARDIO-5510</span>
                         </button>
-                        <button type="button" onclick="quickLogin('head.doctor@apollohealth.org', 'doctor')" class="p-2 rounded-xl bg-purple-950/40 hover:bg-purple-950/80 border border-purple-800/80 hover:border-purple-500 text-left transition group">
-                            <span class="text-xs font-bold text-purple-200 block truncate">Dr. Elena Rostova</span>
+                        <button type="button" onclick="selectStaffProfile('head.doctor@apollohealth.org', 'Dr. Elena Rostova', 'Head Doctor (CMO)', 'Apollo Healthcare', 'CMO-APOLLO-02')" class="p-2 rounded-xl bg-purple-950/40 hover:bg-purple-950/80 border border-purple-800/80 hover:border-purple-500 text-left transition group">
+                            <div class="flex items-center justify-between">
+                                <span class="text-xs font-bold text-purple-200 truncate">Dr. Elena Rostova</span>
+                                <span class="text-[9px] text-purple-400 opacity-70 group-hover:opacity-100 font-medium">Select ➜</span>
+                            </div>
                             <span class="text-[10px] text-purple-400 block font-bold">🎖️ Head Doctor (CMO)</span>
                             <span class="text-[9px] text-slate-400 block truncate">Clinical Model Auditor</span>
                         </button>
                     </div>
                 </div>
 
-                <!-- Non-Doctor Roles Quick Access -->
+                <!-- Non-Doctor Roles Directory -->
                 <div class="pt-2 border-t border-slate-800/80 flex items-center justify-between text-xs">
                     <span class="text-[10px] text-slate-500 uppercase font-bold">Other Portal Roles:</span>
                     <div class="flex gap-2">
-                        <button type="button" onclick="quickLogin('patient@securehealth.org', 'patient')" class="px-2.5 py-1 rounded-lg bg-[#121A2D] hover:bg-slate-800 border border-slate-700 text-emerald-400 text-[11px] font-semibold transition">
+                        <button type="button" onclick="selectStaffProfile('patient@securehealth.org', 'Aswin Krishna', 'Patient', 'Metro Health General', 'Health-ID: 7041-9921')" class="px-2.5 py-1 rounded-lg bg-[#121A2D] hover:bg-slate-800 border border-slate-700 text-emerald-400 text-[11px] font-semibold transition">
                             👤 Aswin Krishna (Patient)
                         </button>
-                        <button type="button" onclick="quickLogin('admin@securehealth.org', 'admin')" class="px-2.5 py-1 rounded-lg bg-[#121A2D] hover:bg-slate-800 border border-slate-700 text-amber-400 text-[11px] font-semibold transition">
+                        <button type="button" onclick="selectStaffProfile('admin@securehealth.org', 'FL Administrator', 'Central Coordinator', 'SecureHealth Network', 'NODE-CENTRAL-01')" class="px-2.5 py-1 rounded-lg bg-[#121A2D] hover:bg-slate-800 border border-slate-700 text-amber-400 text-[11px] font-semibold transition">
                             🌐 Central FL Coordinator
                         </button>
                     </div>
@@ -265,6 +285,24 @@
                 <button type="button" onclick="showAuthTab('register')" id="tab-auth-register" class="flex-1 py-2 rounded-lg text-slate-400 hover:text-white transition">Register Patient</button>
             </div>
 
+            <!-- Active Selected Profile Banner -->
+            <div id="selected-staff-banner" class="hidden p-3 rounded-xl bg-blue-950/40 border border-blue-500/50 text-xs text-slate-300 space-y-1.5 animate-fadeIn">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-2">
+                        <span class="w-2 h-2 rounded-full bg-blue-400 animate-pulse"></span>
+                        <span id="banner-staff-name" class="font-bold text-white text-xs">Dr. Sarah Jenkins</span>
+                        <span id="banner-staff-role" class="text-[10px] px-1.5 py-0.5 rounded bg-blue-900/60 text-blue-300 font-mono">Cardiologist</span>
+                    </div>
+                    <span class="text-[10px] text-amber-400 font-semibold bg-amber-950/80 px-2 py-0.5 rounded border border-amber-800/80 flex items-center gap-1">
+                        <span>🔒</span> Enter Password
+                    </span>
+                </div>
+                <div class="flex items-center justify-between text-[11px] text-slate-400 pt-1 border-t border-slate-800/80">
+                    <span id="banner-staff-hospital">Metro Health General</span>
+                    <span id="banner-staff-license" class="font-mono text-slate-300 text-[10px]">Lic: MD-CARDIO-8821</span>
+                </div>
+            </div>
+
             <!-- Sign In Form -->
             <form id="form-signin" onsubmit="signIn(event)" class="space-y-4">
                 <div>
@@ -273,15 +311,19 @@
                 </div>
                 <div>
                     <div class="flex items-center justify-between mb-1">
-                        <label class="block text-xs font-semibold text-slate-300">Password</label>
-                        <a href="#" onclick="alert('Please contact your hospital network administrator to reset credentials.'); return false;" class="text-[11px] text-blue-400 hover:text-blue-300 hover:underline">Forgot password?</a>
+                        <label class="block text-xs font-semibold text-slate-300">Password <span class="text-rose-400 font-bold">*</span></label>
+                        <a href="#" onclick="alert('Please contact your hospital network administrator or clinical IT director to reset credentials.'); return false;" class="text-[11px] text-blue-400 hover:text-blue-300 hover:underline">Forgot password?</a>
                     </div>
-                    <input id="login-password" type="password" required autocomplete="current-password" placeholder="••••••••" class="w-full bg-[#0D1524] border border-[#1E2C48] focus:border-[#0381FE] focus:ring-1 focus:ring-[#0381FE] rounded-lg px-3.5 py-2.5 text-white text-sm focus:outline-none transition" />
+                    <input id="login-password" type="password" required autocomplete="current-password" placeholder="Enter your password..." class="w-full bg-[#0D1524] border border-[#1E2C48] focus:border-[#0381FE] focus:ring-1 focus:ring-[#0381FE] rounded-lg px-3.5 py-2.5 text-white text-sm focus:outline-none transition" />
+                    <div class="flex items-center justify-between mt-1 text-[10px] text-slate-500">
+                        <span class="text-amber-400/90 font-medium">⚠️ Password entry is mandatory for cryptographic verification</span>
+                        <span class="font-mono text-blue-400/80">Default passwords: role name ("doctor", "patient", "admin")</span>
+                    </div>
                 </div>
                 <div class="flex items-center text-xs text-slate-400">
                     <label class="flex items-center gap-2 cursor-pointer">
                         <input type="checkbox" checked class="rounded border-slate-700 bg-slate-950 text-[#0381FE] focus:ring-0" />
-                        <span>Remember credentials on this terminal</span>
+                        <span>Remember Healthcare ID on this terminal</span>
                     </label>
                 </div>
                 <p id="login-error" role="alert" class="hidden text-xs text-rose-400 bg-rose-950/40 border border-rose-800 p-2.5 rounded-lg"></p>
@@ -1227,20 +1269,40 @@
         }
 
         async function signIn(event) {
-            event.preventDefault();
+            if (event && event.preventDefault) event.preventDefault();
             const button = document.getElementById('login-submit');
             const errorBox = document.getElementById('login-error');
+            const email = (document.getElementById('login-email')?.value || '').trim();
+            const password = document.getElementById('login-password')?.value || '';
+
+            if (errorBox) errorBox.classList.add('hidden');
+
+            if (!email) {
+                if (errorBox) {
+                    errorBox.textContent = 'Please enter your Healthcare ID / Email or select a profile from the directory.';
+                    errorBox.classList.remove('hidden');
+                }
+                document.getElementById('login-email')?.focus();
+                return;
+            }
+
+            if (!password) {
+                if (errorBox) {
+                    errorBox.textContent = '⚠️ Password required. Direct 1-click login without password authentication is blocked for clinical and data security.';
+                    errorBox.classList.remove('hidden');
+                }
+                const passInput = document.getElementById('login-password');
+                if (passInput) passInput.focus();
+                return;
+            }
+
             button.disabled = true;
-            button.textContent = 'Signing in…';
-            errorBox.classList.add('hidden');
+            button.innerHTML = '<span class="inline-flex items-center gap-2"><svg class="animate-spin h-4 w-4 text-white" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path></svg>Verifying Credentials & PBKDF2 Hash…</span>';
             try {
                 const response = await window.fetch(`${API_BASE}/api/auth/login`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        email: document.getElementById('login-email').value,
-                        password: document.getElementById('login-password').value
-                    })
+                    body: JSON.stringify({ email, password })
                 });
                 const data = await response.json();
                 if (!response.ok || !data.success) throw new Error(data.message || 'Sign in failed');
@@ -1249,11 +1311,13 @@
                 applyRoleAccess(data.user);
                 loadRoleDashboard(data.user);
             } catch (error) {
-                errorBox.textContent = error.message;
-                errorBox.classList.remove('hidden');
+                if (errorBox) {
+                    errorBox.textContent = error.message;
+                    errorBox.classList.remove('hidden');
+                }
             } finally {
                 button.disabled = false;
-                button.textContent = 'Sign in';
+                button.innerHTML = '<span>Authenticate & Access Portal</span>';
             }
         }
 
@@ -1345,12 +1409,37 @@
             }
         }
 
-        async function quickLogin(email, password) {
-            document.getElementById('login-email').value = email;
-            document.getElementById('login-password').value = password;
+        function selectStaffProfile(email, name, role, hospital, license) {
             showAuthTab('signin');
-            const fakeEvent = { preventDefault: () => {} };
-            await signIn(fakeEvent);
+            const emailInput = document.getElementById('login-email');
+            const passInput = document.getElementById('login-password');
+            const banner = document.getElementById('selected-staff-banner');
+            const bannerName = document.getElementById('banner-staff-name');
+            const bannerRole = document.getElementById('banner-staff-role');
+            const bannerHosp = document.getElementById('banner-staff-hospital');
+            const bannerLic = document.getElementById('banner-staff-license');
+            const errorBox = document.getElementById('login-error');
+
+            if (errorBox) errorBox.classList.add('hidden');
+
+            // Populate Healthcare ID / email only
+            if (emailInput) emailInput.value = email;
+
+            // STRICT CLINICAL SECURITY: ALWAYS CLEAR PASSWORD - NEVER AUTO-LOGIN OR AUTO-SUBMIT
+            if (passInput) {
+                passInput.value = '';
+                passInput.placeholder = `Enter password for ${name}...`;
+                passInput.focus();
+            }
+
+            // Update banner details
+            if (banner) {
+                banner.classList.remove('hidden');
+                if (bannerName) bannerName.textContent = name;
+                if (bannerRole) bannerRole.textContent = role;
+                if (bannerHosp) bannerHosp.textContent = hospital;
+                if (bannerLic) bannerLic.textContent = license ? `Lic: ${license}` : '';
+            }
         }
 
         async function verifyDoctorOnChain() {
